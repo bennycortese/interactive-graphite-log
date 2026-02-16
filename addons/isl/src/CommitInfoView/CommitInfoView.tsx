@@ -59,7 +59,8 @@ import {
 import {OperationDisabledButton} from '../OperationDisabledButton';
 import {AmendMessageOperation} from '../operations/AmendMessageOperation';
 import {getAmendOperation} from '../operations/AmendOperation';
-import {getCommitOperation, getGraphiteCreateOperation} from '../operations/CommitOperation';
+import {getCommitOperation} from '../operations/CommitOperation';
+import {getGraphiteCreateOperation} from '../operations/GraphiteCreateOperation';
 import {commandRunnerMode} from '../atoms/CommandRunnerModeState';
 import {FOLD_COMMIT_PREVIEW_HASH_PREFIX} from '../operations/FoldOperation';
 import {GhStackSubmitOperation} from '../operations/GhStackSubmitOperation';
@@ -1001,7 +1002,7 @@ function SubmitButton({
             <div>
               <T
                 replace={{
-                  $config: <code>github.preferred_submit_command</code>,
+                  $config: <code>github.preferred-submit-command</code>,
                 }}>
                 Each submit command has tradeoffs, due to how GitHub creates Pull Requests. This can
                 be controlled by the $config config.
@@ -1022,7 +1023,7 @@ function SubmitButton({
       }
       const rememberConfigOp = new SetConfigOperation(
         'local',
-        'github.preferred_submit_command',
+        'github.preferred-submit-command',
         answer,
       );
       setRepoInfo(info => ({

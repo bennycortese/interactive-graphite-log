@@ -55,6 +55,7 @@ export async function runCommand(
   args_: Array<string>,
   options_?: EjecaOptions,
   timeout: number = READ_COMMAND_TIMEOUT_MS,
+  logErrors: boolean = true,
 ): Promise<EjecaReturn> {
   const {command, args, options} = getExecParams(ctx.cmd, args_, ctx.cwd, options_);
   ctx.logger.log('run command: ', ctx.cwd, command, args[0]);
@@ -85,7 +86,9 @@ export async function runCommand(
         throw new Error('Killed');
       }
     }
-    ctx.logger.error(`Error running ${command} ${args[0]}: ${err?.toString()}`);
+    if (logErrors) {
+      ctx.logger.error(`Error running ${command} ${args[0]}: ${err?.toString()}`);
+    }
     throw err;
   } finally {
     clearTimeout(timeoutId);
@@ -159,7 +162,8 @@ export async function getConfigs<T extends string>(
   const configMap: Map<T, string> = new Map();
   for (const name of configNames) {
     try {
-      const result = await runCommand(ctx, ['config', '--get', name]);
+      // logErrors=false: exit code 1 means "key not set", which is expected and not an error
+      const result = await runCommand(ctx, ['config', '--get', name], undefined, undefined, false);
       const value = result.stdout.trim();
       if (value !== '') {
         configMap.set(name, value);

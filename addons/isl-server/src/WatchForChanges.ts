@@ -193,12 +193,8 @@ export class WatchForChanges {
         this.watchman.unwatch(realDotdir, DIRSTATE_WATCHMAN_SUBSCRIPTION);
       });
     } catch (err) {
-      this.logger.error('failed to setup dirstate subscriptions', err);
-      this.tracker.error(
-        'WatchmanEvent',
-        'WatchmanError',
-        `failed to setup watchman dirstate subscriptions ${err}`,
-      );
+      // Watchman not installed → falling back to polling is normal, not an error
+      this.logger.info('Watchman not available for dirstate subscriptions, using polling', err);
     }
   }
 
@@ -283,12 +279,8 @@ export class WatchForChanges {
         this.watchman.unwatch(repoRoot, FILE_CHANGE_WATCHMAN_SUBSCRIPTION);
       });
     } catch (err) {
-      this.logger.error('failed to setup watchman subscriptions', err);
-      this.tracker.error(
-        'WatchmanEvent',
-        'WatchmanError',
-        `failed to setup watchman subscriptions ${err}`,
-      );
+      // Watchman not installed → falling back to polling is normal, not an error
+      this.logger.info('Watchman not available for file subscriptions, using polling', err);
     }
   }
 

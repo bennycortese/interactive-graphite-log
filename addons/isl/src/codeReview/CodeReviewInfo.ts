@@ -13,7 +13,7 @@ import {clearTrackedCache} from 'shared/LRU';
 import {debounce} from 'shared/debounce';
 import {firstLine, nullthrows} from 'shared/utils';
 import serverAPI from '../ClientToServerAPI';
-import {commitMessageTemplate} from '../CommitInfoView/CommitInfoState';
+import {commitMessageTemplate} from '../CommitInfoView/CommitMessageTemplateAtom';
 import {
   applyEditedFields,
   commitMessageFieldsSchema,

@@ -3,10 +3,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type {Hash} from '../types';
+import type {CommitInfo, RepoRelativePath} from '../types';
+import type {PartialSelection} from '../partialSelection';
 
 import {CommandRunner} from '../types';
-import {CommitOperation} from './CommitOperation';
+import {CommitOperation, PartialCommitOperation} from './CommitOperation';
 
 /**
  * Create a new Graphite-tracked branch with a commit, using `gt create`.
@@ -26,7 +27,7 @@ import {CommitOperation} from './CommitOperation';
 export class GraphiteCreateOperation extends CommitOperation {
   static opName = 'gt create';
 
-  constructor(message: string, originalHeadHash: Hash) {
+  constructor(message: string, originalHeadHash: string) {
     super(message, originalHeadHash);
     // Override runner to use Graphite CLI
     this.runner = CommandRunner.Graphite;
@@ -38,4 +39,27 @@ export class GraphiteCreateOperation extends CommitOperation {
     // --message: commit message (first line becomes the branch name suggestion)
     return ['create', '--all', '--message', this.message];
   }
+}
+
+/**
+ * In Graphite mode, use `gt create` instead of `git commit`.
+ * `gt create` commits all staged/tracked changes AND registers the new commit
+ * as a Graphite-tracked branch, enabling `gt sync` to restack it automatically.
+ *
+ * Note: partial selection (chunk-level commit) is not supported by `gt create`
+ * and falls back to a plain `CommitOperation`.
+ */
+export function getGraphiteCreateOperation(
+  message: string,
+  originalHead: CommitInfo | undefined,
+  selection: PartialSelection,
+  allFiles: Array<RepoRelativePath>,
+): GraphiteCreateOperation | CommitOperation | PartialCommitOperation {
+  const originalHeadHash = originalHead?.hash ?? '.';
+  // Partial/chunk selection requires git-level internals; fall back to git commit
+  if (selection.hasChunkSelection()) {
+    return new PartialCommitOperation(message, originalHeadHash, selection, allFiles);
+  }
+  // For full or file-subset selection, use gt create
+  return new GraphiteCreateOperation(message, originalHeadHash);
 }

@@ -381,12 +381,16 @@ export const commitFetchError = atom(get => {
   return get(latestCommitsData).error;
 });
 
-export const authorString = configBackedAtom<string | null>(
-  'ui.username',
-  null,
-  true /* read-only */,
-  true /* use raw value */,
-);
+// Git uses user.name and user.email separately; combine into "Name <email>" format.
+const gitUserName = configBackedAtom<string | null>('user.name', null, true, true);
+const gitUserEmail = configBackedAtom<string | null>('user.email', null, true, true);
+export const authorString = atom<string | null>(get => {
+  const name = get(gitUserName);
+  const email = get(gitUserEmail);
+  if (name == null && email == null) return null;
+  if (name && email) return `${name} <${email}>`;
+  return name ?? email;
+});
 
 export const isFetchingCommits = atom(false);
 registerDisposable(

@@ -9,8 +9,8 @@ import type {Hash} from '../types';
 import type {CommitMessageFields} from './types';
 
 import {atom} from 'jotai';
-import {firstLine} from 'shared/utils';
 import serverAPI from '../ClientToServerAPI';
+import {commitMessageTemplate} from './CommitMessageTemplateAtom';
 import {successionTracker} from '../SuccessionTracker';
 import {tracker} from '../analytics';
 import {latestCommitMessageFields} from '../codeReview/CodeReviewInfo';
@@ -38,27 +38,9 @@ export type EditedMessage = Partial<CommitMessageFields>;
 
 export type CommitInfoMode = 'commit' | 'amend';
 
-export const commitMessageTemplate = atom<EditedMessage | undefined>(undefined);
-registerDisposable(
-  commitMessageTemplate,
-  serverAPI.onMessageOfType('fetchedCommitMessageTemplate', event => {
-    const title = firstLine(event.template);
-    const description = event.template.slice(title.length + 1);
-    const schema = readAtom(commitMessageFieldsSchema);
-    const fields = parseCommitMessageFields(schema, title, description);
-    writeAtom(commitMessageTemplate, fields);
-  }),
-  import.meta.hot,
-);
-registerCleanup(
-  commitMessageTemplate,
-  serverAPI.onSetup(() =>
-    serverAPI.postMessage({
-      type: 'fetchCommitMessageTemplate',
-    }),
-  ),
-  import.meta.hot,
-);
+// commitMessageTemplate is defined in CommitMessageTemplateAtom to avoid a
+// circular dependency: CodeReviewInfo → CommitInfoState → CodeReviewInfo.
+export {commitMessageTemplate};
 
 /** Typed update messages when submitting a commit or set of commits.
  * Unlike editedCommitMessages, you can't provide an update message when committing the first time,

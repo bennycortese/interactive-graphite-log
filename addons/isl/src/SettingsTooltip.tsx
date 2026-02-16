@@ -185,7 +185,7 @@ function SettingsDropdown({
               }
 
               runOperation(
-                new SetConfigOperation('local', 'github.preferred_submit_command', value),
+                new SetConfigOperation('local', 'github.preferred-submit-command', value),
               );
               setRepoInfo(info => ({...nullthrows(info), preferredSubmitCommand: value}));
             }}

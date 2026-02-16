@@ -20,6 +20,11 @@ export type FieldNameAndHashKey = `${string}+${HashKey}`;
  */
 export type CommitMessageFields = Record<string, string | Array<string>>;
 
+/**
+ * Partial commit message fields, used for edited/in-progress messages.
+ */
+export type EditedMessage = Partial<CommitMessageFields>;
+
 export type TypeaheadKind =
   | 'meta-user'
   | 'meta-task'
