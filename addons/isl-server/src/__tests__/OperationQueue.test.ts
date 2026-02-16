@@ -24,7 +24,7 @@ const mockTracker = makeServerSideTracker(
 
 const mockCtx: RepositoryContext = {
   cwd: 'cwd',
-  cmd: 'sl',
+  cmd: 'git',
   logger: mockLogger,
   tracker: mockTracker,
 };
@@ -42,7 +42,7 @@ describe('OperationQueue', () => {
       {
         args: ['pull'],
         id: '1',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'PullOperation',
       },
       onProgress,
@@ -78,7 +78,7 @@ describe('OperationQueue', () => {
       {
         args: ['pull'],
         id: '1',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'PullOperation',
       },
       onProgress,
@@ -115,7 +115,7 @@ describe('OperationQueue', () => {
     const id = 'abc';
     const op = queue.runOrQueueOperation(
       mockCtx,
-      {args: [], id, runner: CommandRunner.Sapling, trackEventName: 'RunOperation'},
+      {args: [], id, runner: CommandRunner.Git, trackEventName: 'RunOperation'},
       onProgress,
     );
     queue.abortRunningOperation('wrong-id');
@@ -146,7 +146,7 @@ describe('OperationQueue', () => {
       {
         args: ['pull'],
         id: '1',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'PullOperation',
       },
       onProgress,
@@ -159,7 +159,7 @@ describe('OperationQueue', () => {
       {
         args: ['rebase'],
         id: '2',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'RebaseOperation',
       },
       onProgress,
@@ -200,7 +200,7 @@ describe('OperationQueue', () => {
       {
         args: ['pull'],
         id: '1',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'PullOperation',
       },
       onProgress,
@@ -212,7 +212,7 @@ describe('OperationQueue', () => {
       {
         args: ['rebase'],
         id: '2',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'RebaseOperation',
       },
       onProgress,
@@ -252,7 +252,7 @@ describe('OperationQueue', () => {
       {
         args: ['pull'],
         id: '1',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'PullOperation',
       },
       onProgress,
@@ -267,7 +267,7 @@ describe('OperationQueue', () => {
       {
         args: ['rebase'],
         id: '2',
-        runner: CommandRunner.Sapling,
+        runner: CommandRunner.Git,
         trackEventName: 'RebaseOperation',
       },
       onProgress,

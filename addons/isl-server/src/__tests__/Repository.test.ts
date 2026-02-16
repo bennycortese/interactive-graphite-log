@@ -279,7 +279,7 @@ describe('Repository', () => {
           id: '1',
           trackEventName: 'CommitOperation',
           args: [],
-          runner: CommandRunner.Sapling,
+          runner: CommandRunner.Git,
           ...op,
         },
         progressSpy,
