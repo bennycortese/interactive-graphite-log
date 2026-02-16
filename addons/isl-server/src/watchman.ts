@@ -194,9 +194,11 @@ export class Watchman {
       this.client.removeAllListeners();
       this.serializedReconnect();
     });
-    this.client.on('error', (error: Error) => {
+    this.client.on('error', (error: Error & {code?: string}) => {
       const statusBeforeError = this.status;
-      this.logger.error('Error while talking to watchman: ', error);
+      // ENOENT means Watchman is not installed — downgrade to info since polling is the fallback
+      const logFn = error.code === 'ENOENT' ? this.logger.info.bind(this.logger) : this.logger.error.bind(this.logger);
+      logFn('Error while talking to watchman: ', error);
       this.tracker.error(
         'WatchmanEvent',
         'WatchmanError',
@@ -378,7 +380,10 @@ export class Watchman {
         this.client.command(args, (error, response) => (error ? reject(error) : resolve(response)));
       });
     } catch (error) {
-      this.logger.error('Watchman command error: ', args, error);
+      // "The client was ended" is a cascade from Watchman not being installed — just info
+      const msg = error instanceof Error ? error.message : String(error);
+      const logFn = msg.includes('client was ended') ? this.logger.info.bind(this.logger) : this.logger.error.bind(this.logger);
+      logFn('Watchman command error: ', args, error);
       throw error;
     }
   }

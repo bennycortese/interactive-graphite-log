@@ -26,7 +26,7 @@ import {readableDiffBlocks as diffBlocks, type LineIdx, splitLines} from 'shared
 import {useThrottledEffect} from 'shared/hooks';
 import {firstLine, nullthrows} from 'shared/utils';
 import {BranchIndicator} from '../../BranchIndicator';
-import {commitMessageTemplate} from '../../CommitInfoView/CommitInfoState';
+import {commitMessageTemplate} from '../../CommitInfoView/CommitMessageTemplateAtom';
 import {
   commitMessageFieldsSchema,
   commitMessageFieldsToString,

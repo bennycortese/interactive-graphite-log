@@ -871,10 +871,11 @@ export const allConfigNames = [
   'isl.download-commit-rebase-type',
   'isl.experimental-features',
   'isl.hold-off-refresh-ms',
-  'github.preferred_submit_command',
+  'github.preferred-submit-command',
   'isl.open-file-cmd',
   'isl.generated-files-regex',
-  'ui.username',
+  'user.name',
+  'user.email',
 ] as const;
 
 /** sl configs read by ISL */
@@ -900,7 +901,7 @@ export const settableConfigNames = [
   'isl.hold-off-refresh-ms',
   'isl.experimental-graph-renderer',
   'isl.generated-files-regex',
-  'github.preferred_submit_command',
+  'github.preferred-submit-command',
 ] as const;
 
 /** sl configs written to by ISL */
