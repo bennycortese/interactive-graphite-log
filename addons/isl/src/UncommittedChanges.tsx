@@ -76,7 +76,8 @@ import {
 import {AbortMergeOperation} from './operations/AbortMergeOperation';
 import {AddRemoveOperation} from './operations/AddRemoveOperation';
 import {getAmendOperation} from './operations/AmendOperation';
-import {getCommitOperation} from './operations/CommitOperation';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
+import {getCommitOperation, getGraphiteCreateOperation} from './operations/CommitOperation';
 import {ContinueOperation} from './operations/ContinueMergeOperation';
 import {DiscardOperation, PartialDiscardOperation} from './operations/DiscardOperation';
 import {PurgeOperation} from './operations/PurgeOperation';
@@ -432,6 +433,7 @@ export function UncommittedChanges({place}: {place: Place}) {
   const commitTitleRef = useRef<HTMLInputElement>(null);
 
   const runOperation = useRunOperation();
+  const runnerMode = useAtomValue(commandRunnerMode);
 
   const useV2SmartActions = useFeatureFlagSync(Internal.featureFlags?.SmartActionsRedesign);
 
@@ -486,7 +488,10 @@ export function UncommittedChanges({place}: {place: Place}) {
     const fields: CommitMessageFields = {...template, Title: title};
     const message = commitMessageFieldsToString(schema, fields);
     const allFiles = uncommittedChanges.map(file => file.path);
-    const operation = getCommitOperation(message, headCommit, selection.selection, allFiles);
+    const operation =
+      runnerMode === 'graphite'
+        ? getGraphiteCreateOperation(message, headCommit, selection.selection, allFiles)
+        : getCommitOperation(message, headCommit, selection.selection, allFiles);
     selection.discardPartialSelections();
     runOperation(operation);
     if (titleEl) {

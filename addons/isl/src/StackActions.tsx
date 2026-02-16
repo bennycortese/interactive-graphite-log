@@ -23,7 +23,9 @@ import {allDiffSummaries, codeReviewProvider} from './codeReview/CodeReviewInfo'
 import {SyncStatus, syncStatusAtom} from './codeReview/syncStatus';
 import {T, t} from './i18n';
 import {IconStack} from './icons/IconStack';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {useRunOperation} from './operationsState';
+import {GraphiteRestackOperation} from './operations/GraphiteRestackOperation';
 import {useUncommittedSelection} from './partialSelection';
 import {dagWithPreviews} from './previews';
 import {latestUncommittedChangesData} from './serverAPIState';
@@ -47,6 +49,7 @@ export function StackActions({hash}: {hash: Hash}): React.ReactElement | null {
   const dag = useAtomValue(dagWithPreviews);
   const runOperation = useRunOperation();
   const syncStatusMap = useAtomValue(syncStatusAtom);
+  const runnerMode = useAtomValue(commandRunnerMode);
 
   // buttons at the bottom of the stack
   const actions = [];
@@ -227,6 +230,27 @@ export function StackActions({hash}: {hash: Hash}): React.ReactElement | null {
   const hasChildren = dag.childHashes(hash).size > 0;
   if (hasChildren) {
     actions.push(<StackEditButton key="edit-stack" info={info} />);
+  }
+
+  // Graphite-mode: show "Restack" button when the current commit has children.
+  // After amending, dependent branches need to be rebased onto the new version.
+  if (runnerMode === 'graphite' && hasChildren) {
+    actions.push(
+      <Tooltip
+        key="gt-restack"
+        placement="bottom"
+        title={t(
+          'Restack dependent branches onto the latest version of this commit using `gt restack`.',
+        )}>
+        <OperationDisabledButton
+          contextKey={`gt-restack-${hash}`}
+          kind="icon"
+          icon={<Icon icon="repo-push" slot="start" />}
+          runOperation={() => new GraphiteRestackOperation()}>
+          <T>Restack</T>
+        </OperationDisabledButton>
+      </Tooltip>,
+    );
   }
 
   if (showCleanupButton) {

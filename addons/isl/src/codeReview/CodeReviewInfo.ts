@@ -28,22 +28,28 @@ import {messageSyncingEnabledState} from '../messageSyncing';
 import {dagWithPreviews} from '../previews';
 import {commitByHash, repositoryInfo} from '../serverAPIState';
 import {registerCleanup, registerDisposable} from '../utils';
+import {commandRunnerMode} from '../atoms/CommandRunnerModeState';
 import {GithubUICodeReviewProvider} from './github/github';
 
 export const codeReviewProvider = atom<UICodeReviewProvider | null>(get => {
   const repoInfo = get(repositoryInfo);
-  return repoInfoToCodeReviewProvider(repoInfo);
+  const runnerMode = get(commandRunnerMode);
+  return repoInfoToCodeReviewProvider(repoInfo, runnerMode);
 });
 
-function repoInfoToCodeReviewProvider(repoInfo?: ValidatedRepoInfo): UICodeReviewProvider | null {
+function repoInfoToCodeReviewProvider(
+  repoInfo?: ValidatedRepoInfo,
+  runnerMode?: 'git' | 'graphite',
+): UICodeReviewProvider | null {
   if (repoInfo == null) {
     return null;
   }
   if (repoInfo.codeReviewSystem.type === 'github') {
-    return new GithubUICodeReviewProvider(
-      repoInfo.codeReviewSystem,
-      repoInfo.preferredSubmitCommand ?? 'pr',
-    );
+    // In Graphite mode, use `gt submit` for stacked PR submission.
+    // Otherwise fall back to the user's preferred submit command or 'pr'.
+    const submitCommand =
+      runnerMode === 'graphite' ? 'submit' : repoInfo.preferredSubmitCommand ?? 'pr';
+    return new GithubUICodeReviewProvider(repoInfo.codeReviewSystem, submitCommand);
   }
   if (
     repoInfo.codeReviewSystem.type === 'phabricator' &&

@@ -27,6 +27,7 @@ import {readAtom} from '../jotaiUtils';
 import {uncommittedChangesWithPreviews} from '../previews';
 import {authorString} from '../serverAPIState';
 import {CommitBaseOperation} from './CommitBaseOperation';
+import {GraphiteCreateOperation} from './GraphiteCreateOperation';
 import {Operation} from './Operation';
 
 export class CommitOperation extends CommitBaseOperation {
@@ -202,4 +203,27 @@ export function getCommitOperation(
     const selectedFiles = allFiles.filter(path => selection.isFullyOrPartiallySelected(path));
     return new CommitOperation(message, originalHeadHash, selectedFiles);
   }
+}
+
+/**
+ * In Graphite mode, use `gt create` instead of `git commit`.
+ * `gt create` commits all staged/tracked changes AND registers the new commit
+ * as a Graphite-tracked branch, enabling `gt sync` to restack it automatically.
+ *
+ * Note: partial selection (chunk-level commit) is not supported by `gt create`
+ * and falls back to a plain `CommitOperation`.
+ */
+export function getGraphiteCreateOperation(
+  message: string,
+  originalHead: CommitInfo | undefined,
+  selection: PartialSelection,
+  allFiles: Array<RepoRelativePath>,
+): GraphiteCreateOperation | CommitOperation | PartialCommitOperation {
+  const originalHeadHash = originalHead?.hash ?? '.';
+  // Partial/chunk selection requires git-level internals; fall back to git commit
+  if (selection.hasChunkSelection()) {
+    return new PartialCommitOperation(message, originalHeadHash, selection, allFiles);
+  }
+  // For full or file-subset selection, use gt create (file-subset will commit all - limitation of gt create)
+  return new GraphiteCreateOperation(message, originalHeadHash);
 }

@@ -5,23 +5,32 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import {commandRunnerForMode} from '../atoms/CommandRunnerModeState';
 import {CommandRunner} from '../types';
 import {Operation} from './Operation';
 
 /**
- * Sync using Graphite's `gt sync` command, which fetches from remote
- * and restacks stacked branches automatically.
+ * Sync/pull from remote.
+ *
+ * In Graphite mode (default): runs `gt sync` which fetches from remote and
+ * automatically restacks stacked branches. This is the recommended mode when
+ * using Graphite for stacked diffs.
+ *
+ * In Git mode: runs `git fetch --all --prune` to fetch all remotes.
  */
 export class PullOperation extends Operation {
   static opName = 'Sync';
 
-  constructor() {
+  constructor(mode: 'git' | 'graphite' = 'graphite') {
     super('PullOperation');
-    // Use Graphite CLI for sync to handle stack restacking
-    this.runner = CommandRunner.Graphite;
+    this.runner = commandRunnerForMode(mode);
   }
 
   getArgs() {
-    return ['sync'];
+    if (this.runner === CommandRunner.Graphite) {
+      return ['sync'];
+    }
+    // git mode: fetch all remotes and prune deleted remote branches
+    return ['fetch', '--all', '--prune'];
   }
 }

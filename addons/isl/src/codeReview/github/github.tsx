@@ -25,6 +25,7 @@ import {OSSCommitMessageFieldSchema} from '../../CommitInfoView/OSSCommitMessage
 import {Internal} from '../../Internal';
 import {t, T} from '../../i18n';
 import {GhStackSubmitOperation} from '../../operations/GhStackSubmitOperation';
+import {GraphiteSubmitOperation} from '../../operations/GraphiteSubmitOperation';
 import {PrSubmitOperation} from '../../operations/PrSubmitOperation';
 
 import './GitHubPRBadge.css';
@@ -102,7 +103,9 @@ export class GithubUICodeReviewProvider implements UICodeReviewProvider {
     _commits: Array<CommitInfo>,
     options: {draft?: boolean; updateMessage?: string; publishWhenReady?: boolean},
   ): Operation {
-    if (this.preferredSubmitCommand === 'ghstack') {
+    if (this.preferredSubmitCommand === 'submit') {
+      return new GraphiteSubmitOperation({draft: options.draft});
+    } else if (this.preferredSubmitCommand === 'ghstack') {
       return new GhStackSubmitOperation(options);
     } else if (this.preferredSubmitCommand === 'pr') {
       return new PrSubmitOperation(options);
@@ -112,7 +115,10 @@ export class GithubUICodeReviewProvider implements UICodeReviewProvider {
   }
 
   submitCommandName() {
-    return `sl ${this.preferredSubmitCommand}`;
+    if (this.preferredSubmitCommand === 'submit') {
+      return 'gt submit';
+    }
+    return `git ${this.preferredSubmitCommand}`;
   }
 
   getSupportedStackActions() {

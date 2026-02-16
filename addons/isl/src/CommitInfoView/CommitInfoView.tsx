@@ -59,7 +59,8 @@ import {
 import {OperationDisabledButton} from '../OperationDisabledButton';
 import {AmendMessageOperation} from '../operations/AmendMessageOperation';
 import {getAmendOperation} from '../operations/AmendOperation';
-import {getCommitOperation} from '../operations/CommitOperation';
+import {getCommitOperation, getGraphiteCreateOperation} from '../operations/CommitOperation';
+import {commandRunnerMode} from '../atoms/CommandRunnerModeState';
 import {FOLD_COMMIT_PREVIEW_HASH_PREFIX} from '../operations/FoldOperation';
 import {GhStackSubmitOperation} from '../operations/GhStackSubmitOperation';
 import {PrSubmitOperation} from '../operations/PrSubmitOperation';
@@ -702,6 +703,7 @@ function ActionsBar({
   const provider = useAtomValue(codeReviewProvider);
   const schema = useAtomValue(commitMessageFieldsSchema);
   const headCommit = useAtomValue(latestHeadCommit);
+  const runnerMode = useAtomValue(commandRunnerMode);
 
   const messageSyncEnabled = useAtomValue(messageSyncingEnabledState);
 
@@ -745,7 +747,9 @@ function ActionsBar({
     const allFiles = uncommittedChanges.map(file => file.path);
 
     const operation = isCommitMode
-      ? getCommitOperation(message, headCommit, selection.selection, allFiles)
+      ? runnerMode === 'graphite'
+        ? getGraphiteCreateOperation(message, headCommit, selection.selection, allFiles)
+        : getCommitOperation(message, headCommit, selection.selection, allFiles)
       : getAmendOperation(message, headCommit, selection.selection, allFiles);
 
     selection.discardPartialSelections();

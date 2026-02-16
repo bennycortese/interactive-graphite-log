@@ -14,6 +14,7 @@ import {DOCUMENTATION_DELAY, Tooltip} from 'isl-components/Tooltip';
 import {useAtom, useAtomValue} from 'jotai';
 import {fetchStableLocations} from './BookmarksData';
 import {Internal} from './Internal';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {t, T} from './i18n';
 import {configBackedAtom} from './jotaiUtils';
 import {PullOperation} from './operations/PullOperation';
@@ -22,18 +23,7 @@ import {uncommittedChangesWithPreviews, useMostRecentPendingOperation} from './p
 
 import './PullButton.css';
 
-const DEFAULT_PULL_BUTTON = {
-  id: 'pull',
-  label: <T>Pull</T>,
-  getOperation: () => new PullOperation(),
-  isRunning: (op: Operation) => op instanceof PullOperation,
-  tooltip: t('Fetch latest repository and branch information from remote.'),
-  allowWithUncommittedChanges: true,
-};
-const pullButtonChoiceKey = configBackedAtom<string>(
-  'isl.pull-button-choice',
-  DEFAULT_PULL_BUTTON.id,
-);
+const pullButtonChoiceKey = configBackedAtom<string>('isl.pull-button-choice', 'pull');
 
 export type PullButtonOption = {
   id: string;
@@ -46,6 +36,19 @@ export type PullButtonOption = {
 
 export function PullButton() {
   const runOperation = useRunOperation();
+  const mode = useAtomValue(commandRunnerMode);
+
+  const DEFAULT_PULL_BUTTON: PullButtonOption = {
+    id: 'pull',
+    label: <T>Pull</T>,
+    getOperation: () => new PullOperation(mode),
+    isRunning: (op: Operation) => op instanceof PullOperation,
+    tooltip:
+      mode === 'graphite'
+        ? t('Sync with remote using `gt sync` — fetches and restacks stacked branches.')
+        : t('Fetch latest repository and branch information from remote using `git fetch`.'),
+    allowWithUncommittedChanges: true,
+  };
 
   const pullButtonOptions: Array<PullButtonOption> = [];
   pullButtonOptions.push(DEFAULT_PULL_BUTTON, ...(Internal.additionalPullOptions ?? []));
@@ -92,7 +95,7 @@ export function PullButton() {
           <Button
             disabled={!!isRunningPull}
             onClick={() => {
-              runOperation(new PullOperation());
+              runOperation(new PullOperation(mode));
               fetchStableLocations();
             }}>
             <Icon slot="start" icon={isRunningPull ? 'loading' : 'cloud-download'} />
