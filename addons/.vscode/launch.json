@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Sapling VS Code Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--disable-extension", "facebook.sapling-scm"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"]
+    },
+    {
+      "name": "Run & Debug isl-server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "args": ["./dist/run-proxy.js", "--dev", "--force", "--foreground", "--stdout", "--command", "hg"],
+      "localRoot": "${workspaceRoot}/isl-server",
+      "stopOnEntry": false,
+      "sourceMaps": true,
+    },
+    {
+      "name": "isl tests",
+      "type": "node",
+      "request": "launch",
+      "args": ["../node_modules/jest/bin/jest.js"],
+      "localRoot": "${workspaceRoot}/isl",
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outputCapture": "std",
+    }
+  ]
+}
