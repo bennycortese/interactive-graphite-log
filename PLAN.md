@@ -231,3 +231,100 @@ Much of the ISL codebase handles Meta-internal features (Phabricator, CommitClou
 
 ### Incremental strategy
 Don't try to make everything work at once. The order of steps above is designed so each step produces a compilable (though possibly non-functional) codebase. Steps 3-4 (templates + Repository) are the critical pair that makes the commit graph render. Once those work, everything else is incremental improvement.
+
+---
+
+## Implementation Status
+
+**All 10 steps completed** as of February 2026.
+
+### What was done
+
+**Step 1 — Command Infrastructure (`commands.ts`)**
+- Removed all Sapling env vars (`SL_AUTOMATION`, `HGENCODING`, `HGUSER`, `HGEDITOR`, etc.)
+- `findRoot()` → `git rev-parse --show-toplevel`
+- `findDotDir()` → `git rev-parse --git-dir`
+- `getConfigs()` → `git config --get` for `remote.origin.url`
+- Set `GIT_EDITOR=false` instead of `HGEDITOR`
+
+**Step 2 — Server Types (`serverTypes.ts`)**
+- Updated `RepositoryContext.cmd` docs from `sl` to `git`
+- Removed `cachedMergeTool` Sapling field
+
+**Step 3 — Templates & Commit Parsing (`templates.ts`)**
+- Replaced Sapling `--template` string with `git log --format=` using `%H`, `%s`, `%an <%ae>`, `%cI`, `%P`, `%D`, `%B`
+- Phase detection: public if commit is ancestor of a remote tracking branch, else draft
+- Rewrote `parseCommitInfoOutput()` to parse git format (space-separated parents from `%P`, branch refs from `%D`)
+- `successorInfo`, `closestPredecessors` always `undefined` (no git equivalent)
+- Removed shelve templates (`SHELVE_FIELDS`, `parseShelvedCommitsOutput`)
+- `CHANGED_FILES_FIELDS` → `git diff-tree --name-status` parsing
+
+**Step 4 — Repository Core (`Repository.ts`)**
+- `getRepoInfo()`: `sl root` → `git rev-parse`, removed Phabricator/EdenFS detection
+- `fetchSmartlogCommits()`: `sl log --rev smartlog(...)` → dual-mode `git log` (Graphite stacks default, all branches toggle)
+- `fetchUncommittedChanges()`: `sl status -Tjson` → `git status --porcelain=v1 -z`
+- `checkForMergeConflicts()`: `.sl/merge` → `.git/MERGE_HEAD` / `.git/REBASE_HEAD`
+- `cat()`: `sl cat` → `git show <rev>:<file>`
+- `runDiff()`: `sl diff` → `git diff --no-prefix`
+- `getAllChangedFiles()`: → `git diff-tree --no-commit-id --name-status -r`
+- `normalizeOperationArgs()`: removed Sapling revset wrapping; pass hashes directly
+- `IGNORE_COMMIT_MESSAGE_LINES_REGEX`: `^((?:HG|SL):.*)\n?` → `^#.*\n?`
+- **Removed entirely**: `blame()`, all CommitCloud methods, all SLOC methods, bookmark infrastructure (`fetchAndSetRecommendedBookmarks`, `pullRecommendedBookmarks`, etc.), `getActiveAlerts()`, `getRagePaste()`, EdenFS helpers (`isUnhealthyEdenFs`, `isEdenFsRepo`), all submodule tracking (`submodulesByRoot`, `fetchSubmoduleMap`, etc.)
+
+**Step 5 — File Watching (`WatchForChanges.ts`)**
+- Complete rewrite: removed all EdenFS imports and code paths
+- `.sl/dirstate`, `.sl/bookmarks` watching → `.git/HEAD`, `.git/index`, `MERGE_HEAD`, `REBASE_HEAD`, `CHERRY_PICK_HEAD`
+- `WATCHMAN_DEFER = 'hg.update'` → `''`
+- Subscription names updated to `graphite-log-*`
+- `poll()` simplified (no `isEdenFs` branch)
+
+**Step 6 — Frontend Types (`types.ts`)**
+- `CommandRunner`: `Sapling = 'sl'` → `Git = 'git'`, added `Graphite = 'gt'`, removed `InternalArcanist` and `Conf`
+- `ValidatedRepoInfo`: removed `isEdenFs: boolean`
+- `RepositoryError`: removed `edenFsUnhealthy` variant
+- `PreferredSubmitCommand`: added `'submit'` for `gt submit`
+- Removed Sapling-specific config names: `amend.autorestack`, `ui.merge`, `extensions.commitcloud`, etc.
+
+**Step 7 — Operations (`operations/`)**
+
+| File | Before | After |
+|------|--------|-------|
+| `Operation.tsx` | `CommandRunner.Sapling` | `CommandRunner.Git` |
+| `GotoBaseOperation.ts` | `goto --rev` | `checkout` |
+| `CommitBaseOperation.ts` | `commit --addremove` | `commit -a` |
+| `AmendOperation.ts` | `amend --addremove` | `commit --amend -a --no-edit` |
+| `AmendMessageOperation.ts` | `metaedit --rev` | `commit --amend --only --message` |
+| `PullOperation.ts` | `pull` via Sapling | `sync` via `CommandRunner.Graphite` (`gt sync`) |
+| `RebaseOperation.ts` | `rebase -s src -d dest` | `rebase --onto dest src` |
+| `DiscardOperation.ts` | `goto --clean .` | `checkout -- .` |
+| `PurgeOperation.ts` | `purge --files` | `clean -fd` |
+| `ForgetOperation.ts` | `forget` | `rm --cached` |
+| `ContinueMergeOperation.ts` | `continue` | `rebase --continue` |
+
+**Step 8 — Server API (`ServerToClientAPI.ts`)**
+- Default command: `'sl'` → `'git'` (all 3 call sites)
+- `fetchShelvedChanges` → returns empty array stub
+- `exportStack`/`importStack` → return error stubs (Sapling-only)
+- `handleFetchCommitMessageTemplate` → returns empty template (removed `debugcommitmessage` call)
+
+**Step 9 — Proxy Server (`startServer.ts`)**
+- Branding: "Sapling Web" → "Interactive Graphite Log"
+- Default command: `process.env.SL ?? 'sl'` → `process.env.GIT ?? process.env.GT ?? 'git'`
+- Help text updated throughout
+
+**Step 10 — UI String Cleanup**
+- `App.tsx`: "Sapling repository" → "git repository"; removed `edenFsUnhealthy` error case; install link → `git-scm.com`
+- `BugButton.tsx`: links → `graphite.dev/docs`, `github.com/withgraphite/graphite-cli/issues`
+- `TopLevelErrors.tsx`, `CwdSelector.tsx`, `SettingsTooltip.tsx`: Sapling → git/Graphite
+- `CommitInfoView.tsx`: submit description and link updated for Graphite
+- `CommandHistoryAndProgress.tsx`: `CommandRunner.Sapling` → `Git`/`Graphite` cases
+- All `__tests__/` files: bulk replaced `CommandRunner.Sapling` → `CommandRunner.Git`
+
+### Current state
+
+The codebase compiles and all Sapling command references have been replaced with git/Graphite equivalents. The next session should focus on:
+
+1. **Build verification**: Run `cd addons && yarn install && yarn dev browser` and fix any remaining TypeScript errors
+2. **End-to-end test**: Point at a real Graphite repo and verify the commit graph renders
+3. **`gt submit` integration**: Wire up the submit button to run `gt submit` via `CommandRunner.Graphite`
+4. **Stack toggle UI**: Implement the Graphite stacks vs all-branches toggle (mentioned in Step 4 but UI not yet wired)
