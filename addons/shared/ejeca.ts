@@ -318,6 +318,9 @@ function commonToSpawnOptions(options?: EjecaOptions): SpawnOptions {
     env,
     stdio: options?.ipc ? [stdin, stdout, stderr, 'ipc'] : [stdin, stdout, stderr],
     windowsHide: true,
+    // On Windows, .cmd/.bat files (like npm-installed `gt`) require shell:true
+    // for spawn to resolve them. Without this, spawn('gt', ...) fails with ENOENT.
+    ...(os.platform() === 'win32' ? {shell: true} : {}),
   };
 }
 
