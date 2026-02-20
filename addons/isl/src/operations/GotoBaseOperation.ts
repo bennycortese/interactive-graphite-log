@@ -7,18 +7,30 @@
 
 import type {ExactRevset, OptimisticRevset, SucceedableRevset} from '../types';
 
+import {CommandRunner} from '../types';
 import {Operation} from './Operation';
 
 export class GotoBaseOperation extends Operation {
-  constructor(protected destination: SucceedableRevset | ExactRevset | OptimisticRevset) {
+  /**
+   * @param destination Revset for the target commit (used by git checkout fallback)
+   * @param graphiteBranch If set, use `gt branch checkout <name>` instead of `git checkout`
+   */
+  constructor(
+    protected destination: SucceedableRevset | ExactRevset | OptimisticRevset,
+    private graphiteBranch?: string,
+  ) {
     super('GotoOperation');
+    if (graphiteBranch) {
+      this.runner = CommandRunner.Graphite;
+    }
   }
 
   static opName = 'Goto';
 
   getArgs() {
-    // git checkout <hash/branch> - equivalent to sl goto --rev
-    const args = ['checkout', this.destination];
-    return args;
+    if (this.runner === CommandRunner.Graphite && this.graphiteBranch) {
+      return ['branch', 'checkout', this.graphiteBranch];
+    }
+    return ['checkout', this.destination];
   }
 }

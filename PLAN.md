@@ -333,12 +333,11 @@ The codebase compiles and all Sapling command references have been replaced with
 ### Already done
 - `gt sync` (PullOperation), `gt submit --stack`, `gt restack`, `gt create --all -m`
 - Git/Graphite mode toggle, Windows `.cmd` spawn fix
+- **`gt branch checkout` for Goto** — `GotoBaseOperation` now accepts an optional `graphiteBranch` param. When set, uses `CommandRunner.Graphite` to run `gt branch checkout <name>`. `Commit.tsx:gotoAction` reads `commandRunnerMode` and passes `commit.bookmarks[0]` in graphite mode. Falls back to `git checkout` for hash-only destinations (DownloadCommitsMenu, GotoTimeMenu).
 
 ### Planned (priority order)
 
-1. **`gt branch checkout` for Goto** — GotoOperation currently uses `git checkout`. In graphite mode, use `gt branch checkout <name>` so Graphite tracks navigation and keeps stack metadata consistent.
-
-2. **`gt modify` for Amend** — AmendOperation uses `git commit --amend`. Graphite equivalent is `gt modify` which preserves stack metadata. Without this, amending via the UI can desync Graphite's tracked state.
+1. **`gt modify` for Amend** — AmendOperation uses `git commit --amend`. Graphite equivalent is `gt modify` which preserves stack metadata. Without this, amending via the UI can desync Graphite's tracked state.
 
 3. **`gt branch create` audit** — Verify GraphiteCreateOperation args match current CLI. Newer GT versions use `gt branch create` instead of `gt create`. Check and update if needed.
 

@@ -15,8 +15,11 @@ import {latestSuccessor} from '../successionUtils';
 import {GotoBaseOperation} from './GotoBaseOperation';
 
 export class GotoOperation extends GotoBaseOperation {
-  constructor(protected destination: SucceedableRevset | ExactRevset | OptimisticRevset) {
-    super(destination);
+  constructor(
+    protected destination: SucceedableRevset | ExactRevset | OptimisticRevset,
+    graphiteBranch?: string,
+  ) {
+    super(destination, graphiteBranch);
   }
 
   getInitialInlineProgress(): [hash: string, message: string][] {

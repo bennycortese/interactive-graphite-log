@@ -60,6 +60,7 @@ import {IrrelevantCwdIcon} from './icons/IrrelevantCwdIcon';
 import {atomFamilyWeak, localStorageBackedAtom, readAtom, writeAtom} from './jotaiUtils';
 import {CONFLICT_SIDE_LABELS} from './mergeConflicts/consts';
 import {getAmendToOperation, isAmendToAllowedForCommit} from './operationUtils';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {GotoOperation} from './operations/GotoOperation';
 import {HideOperation} from './operations/HideOperation';
 import {
@@ -945,13 +946,19 @@ async function gotoAction(runOperation: ReturnType<typeof useRunOperation>, comm
     return;
   }
 
+  const mode = readAtom(commandRunnerMode);
+  // In graphite mode, prefer local branch names so we can use `gt branch checkout`
+  // which keeps Graphite's stack metadata consistent.
+  const graphiteBranch =
+    mode === 'graphite' && commit.bookmarks.length > 0 ? commit.bookmarks[0] : undefined;
+
   const dest =
     // If the commit has a remote bookmark, use that instead of the hash. This is easier to read in the command history
     // and works better with optimistic state
     commit.remoteBookmarks.length > 0
       ? succeedableRevset(commit.remoteBookmarks[0])
       : latestSuccessorUnlessExplicitlyObsolete(commit);
-  runOperation(new GotoOperation(dest));
+  runOperation(new GotoOperation(dest, graphiteBranch));
   // Instead of propagating, ensure we remove the selection, so we view the new head commit by default
   // (since the head commit is the default thing shown in the sidebar)
   writeAtom(selectedCommits, new Set());
