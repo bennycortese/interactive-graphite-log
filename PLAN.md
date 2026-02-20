@@ -322,9 +322,28 @@ Don't try to make everything work at once. The order of steps above is designed 
 
 ### Current state
 
-The codebase compiles and all Sapling command references have been replaced with git/Graphite equivalents. The next session should focus on:
+The codebase compiles and all Sapling command references have been replaced with git/Graphite equivalents.
 
-1. **Build verification**: Run `cd addons && yarn install && yarn dev browser` and fix any remaining TypeScript errors
-2. **End-to-end test**: Point at a real Graphite repo and verify the commit graph renders
-3. **`gt submit` integration**: Wire up the submit button to run `gt submit` via `CommandRunner.Graphite`
-4. **Stack toggle UI**: Implement the Graphite stacks vs all-branches toggle (mentioned in Step 4 but UI not yet wired)
+**Bug fix applied**: Windows `spawn('gt', ...)` was failing with ENOENT because `gt` is a `.cmd` wrapper (npm install). Fixed in `addons/shared/ejeca.ts` by adding `shell: true` on Windows so `spawn` can resolve `.cmd`/`.bat` files.
+
+---
+
+## Next: Extend Graphite Support
+
+### Already done
+- `gt sync` (PullOperation), `gt submit --stack`, `gt restack`, `gt create --all -m`
+- Git/Graphite mode toggle, Windows `.cmd` spawn fix
+
+### Planned (priority order)
+
+1. **`gt branch checkout` for Goto** — GotoOperation currently uses `git checkout`. In graphite mode, use `gt branch checkout <name>` so Graphite tracks navigation and keeps stack metadata consistent.
+
+2. **`gt modify` for Amend** — AmendOperation uses `git commit --amend`. Graphite equivalent is `gt modify` which preserves stack metadata. Without this, amending via the UI can desync Graphite's tracked state.
+
+3. **`gt branch create` audit** — Verify GraphiteCreateOperation args match current CLI. Newer GT versions use `gt branch create` instead of `gt create`. Check and update if needed.
+
+4. **`gt log --json` for smartlog** — Commit graph fetching uses raw `git log`. Optionally use `gt log --json` to get Graphite-aware stack info (parent tracking, PR status) for richer UI without needing the GitHub API.
+
+5. **Granular restack operations** — Add `gt upstack restack` / `gt downstack restack` as options beyond the current full `gt restack`, useful for the stack actions UI.
+
+6. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.
