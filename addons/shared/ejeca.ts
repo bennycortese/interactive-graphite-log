@@ -322,7 +322,7 @@ function commonToSpawnOptions(options?: EjecaOptions): SpawnOptions {
     // for spawn to resolve them. Without this, spawn('gt', ...) fails with ENOENT.
     ...(os.platform() === 'win32' ? {shell: true} : {}),
   };
-}
+} 
 
 /**
  * Essentially a wrapper for [`child_process.spawn`](https://nodejs.org/docs/latest-v18.x/api/child_process.html#child_processspawncommand-args-options), which
