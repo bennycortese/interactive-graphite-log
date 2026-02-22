@@ -10,9 +10,9 @@ import {CommandRunner} from '../types';
 import {CommitOperation, PartialCommitOperation} from './CommitOperation';
 
 /**
- * Create a new Graphite-tracked branch with a commit, using `gt create`.
+ * Create a new Graphite-tracked branch with a commit, using `gt branch create`.
  *
- * Runs `gt create --all --message <message>`, which:
+ * Runs `gt branch create --all --no-interactive --message <message>`, which:
  * 1. Stages all tracked changes (like `git add -u`)
  * 2. Creates a new commit
  * 3. Creates a new branch tracked in Graphite's stack metadata
@@ -25,7 +25,7 @@ import {CommitOperation, PartialCommitOperation} from './CommitOperation';
  * shows the new commit immediately.
  */
 export class GraphiteCreateOperation extends CommitOperation {
-  static opName = 'gt create';
+  static opName = 'gt branch create';
 
   constructor(message: string, originalHeadHash: string) {
     super(message, originalHeadHash);
@@ -34,19 +34,20 @@ export class GraphiteCreateOperation extends CommitOperation {
   }
 
   getArgs() {
-    // gt create --all --message <message>
+    // gt branch create --all --no-interactive --message <message>
     // --all: stage all tracked modifications (equivalent to git commit -a)
+    // --no-interactive: prevent interactive prompts (we're running non-interactively)
     // --message: commit message (first line becomes the branch name suggestion)
-    return ['create', '--all', '--message', this.message];
+    return ['branch', 'create', '--all', '--no-interactive', '--message', this.message];
   }
 }
 
 /**
- * In Graphite mode, use `gt create` instead of `git commit`.
- * `gt create` commits all staged/tracked changes AND registers the new commit
+ * In Graphite mode, use `gt branch create` instead of `git commit`.
+ * `gt branch create` commits all staged/tracked changes AND registers the new commit
  * as a Graphite-tracked branch, enabling `gt sync` to restack it automatically.
  *
- * Note: partial selection (chunk-level commit) is not supported by `gt create`
+ * Note: partial selection (chunk-level commit) is not supported by `gt branch create`
  * and falls back to a plain `CommitOperation`.
  */
 export function getGraphiteCreateOperation(

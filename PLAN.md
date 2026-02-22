@@ -331,17 +331,16 @@ The codebase compiles and all Sapling command references have been replaced with
 ## Next: Extend Graphite Support
 
 ### Already done
-- `gt sync` (PullOperation), `gt submit --stack`, `gt restack`, `gt create --all -m`
+- `gt sync` (PullOperation), `gt submit --stack`, `gt restack`, `gt branch create --all -m`
 - Git/Graphite mode toggle, Windows `.cmd` spawn fix
 - **`gt branch checkout` for Goto** — `GotoBaseOperation` now accepts an optional `graphiteBranch` param. When set, uses `CommandRunner.Graphite` to run `gt branch checkout <name>`. `Commit.tsx:gotoAction` reads `commandRunnerMode` and passes `commit.bookmarks[0]` in graphite mode. Falls back to `git checkout` for hash-only destinations (DownloadCommitsMenu, GotoTimeMenu).
 - **`gt modify` for Amend** — New `GraphiteModifyOperation` extends `AmendOperation` and uses `CommandRunner.Graphite` to run `gt modify --all --no-interactive` (or with `--message` when the commit message changes). `CommitInfoView.tsx` and `UncommittedChanges.tsx` check `commandRunnerMode` and dispatch `getGraphiteModifyOperation()` in graphite mode, falling back to `getAmendOperation()` (git) otherwise. Chunk-level partial amend falls back to git since `gt modify --patch` requires interactive input. `AmendOperation.filePathsToAmend` changed from `private` to `protected` to allow subclass access.
+- **`gt branch create` audit** — Confirmed `gt create` and `gt branch create` are identical aliases. Updated `GraphiteCreateOperation` to use canonical `gt branch create` form (consistent with `gt branch checkout` pattern). Added `--no-interactive` flag to prevent interactive prompts in the non-interactive UI context. Args now: `['branch', 'create', '--all', '--no-interactive', '--message', msg]`.
 
 ### Planned (priority order)
 
-1. **`gt branch create` audit** — Verify GraphiteCreateOperation args match current CLI. Newer GT versions use `gt branch create` instead of `gt create`. Check and update if needed.
+1. **`gt log --json` for smartlog** — Commit graph fetching uses raw `git log`. Optionally use `gt log --json` to get Graphite-aware stack info (parent tracking, PR status) for richer UI without needing the GitHub API.
 
-2. **`gt log --json` for smartlog** — Commit graph fetching uses raw `git log`. Optionally use `gt log --json` to get Graphite-aware stack info (parent tracking, PR status) for richer UI without needing the GitHub API.
+2. **Granular restack operations** — Add `gt upstack restack` / `gt downstack restack` as options beyond the current full `gt restack`, useful for the stack actions UI.
 
-3. **Granular restack operations** — Add `gt upstack restack` / `gt downstack restack` as options beyond the current full `gt restack`, useful for the stack actions UI.
-
-4. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.
+3. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.
