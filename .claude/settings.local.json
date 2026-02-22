@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(/c/Users/antho/benny_stuff/interactive-graphite-log/addons/node_modules/.bin/tsc:*)"
+      "Bash(/c/Users/antho/benny_stuff/interactive-graphite-log/addons/node_modules/.bin/tsc:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

@@ -79,6 +79,7 @@ import {getAmendOperation} from './operations/AmendOperation';
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {getCommitOperation} from './operations/CommitOperation';
 import {getGraphiteCreateOperation} from './operations/GraphiteCreateOperation';
+import {getGraphiteModifyOperation} from './operations/GraphiteModifyOperation';
 import {ContinueOperation} from './operations/ContinueMergeOperation';
 import {DiscardOperation, PartialDiscardOperation} from './operations/DiscardOperation';
 import {PurgeOperation} from './operations/PurgeOperation';
@@ -774,12 +775,20 @@ export function UncommittedChanges({place}: {place: Place}) {
                   }
 
                   const allFiles = uncommittedChanges.map(file => file.path);
-                  const operation = getAmendOperation(
-                    undefined,
-                    headCommit,
-                    selection.selection,
-                    allFiles,
-                  );
+                  const operation =
+                    runnerMode === 'graphite'
+                      ? getGraphiteModifyOperation(
+                          undefined,
+                          headCommit,
+                          selection.selection,
+                          allFiles,
+                        )
+                      : getAmendOperation(
+                          undefined,
+                          headCommit,
+                          selection.selection,
+                          allFiles,
+                        );
                   selection.discardPartialSelections();
                   runOperation(operation);
                 }}>

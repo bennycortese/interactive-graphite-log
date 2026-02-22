@@ -61,6 +61,7 @@ import {AmendMessageOperation} from '../operations/AmendMessageOperation';
 import {getAmendOperation} from '../operations/AmendOperation';
 import {getCommitOperation} from '../operations/CommitOperation';
 import {getGraphiteCreateOperation} from '../operations/GraphiteCreateOperation';
+import {getGraphiteModifyOperation} from '../operations/GraphiteModifyOperation';
 import {commandRunnerMode} from '../atoms/CommandRunnerModeState';
 import {FOLD_COMMIT_PREVIEW_HASH_PREFIX} from '../operations/FoldOperation';
 import {GhStackSubmitOperation} from '../operations/GhStackSubmitOperation';
@@ -751,7 +752,9 @@ function ActionsBar({
       ? runnerMode === 'graphite'
         ? getGraphiteCreateOperation(message, headCommit, selection.selection, allFiles)
         : getCommitOperation(message, headCommit, selection.selection, allFiles)
-      : getAmendOperation(message, headCommit, selection.selection, allFiles);
+      : runnerMode === 'graphite'
+        ? getGraphiteModifyOperation(message, headCommit, selection.selection, allFiles)
+        : getAmendOperation(message, headCommit, selection.selection, allFiles);
 
     selection.discardPartialSelections();
 

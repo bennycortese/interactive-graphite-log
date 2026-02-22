@@ -25,7 +25,7 @@ export class AmendOperation extends Operation {
    * @param message if provided, update commit description to use this title & description
    */
   constructor(
-    private filePathsToAmend?: Array<RepoRelativePath>,
+    protected filePathsToAmend?: Array<RepoRelativePath>,
     public message?: string,
     public author?: string,
   ) {
