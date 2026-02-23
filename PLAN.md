@@ -336,11 +336,10 @@ The codebase compiles and all Sapling command references have been replaced with
 - **`gt branch checkout` for Goto** — `GotoBaseOperation` now accepts an optional `graphiteBranch` param. When set, uses `CommandRunner.Graphite` to run `gt branch checkout <name>`. `Commit.tsx:gotoAction` reads `commandRunnerMode` and passes `commit.bookmarks[0]` in graphite mode. Falls back to `git checkout` for hash-only destinations (DownloadCommitsMenu, GotoTimeMenu).
 - **`gt modify` for Amend** — New `GraphiteModifyOperation` extends `AmendOperation` and uses `CommandRunner.Graphite` to run `gt modify --all --no-interactive` (or with `--message` when the commit message changes). `CommitInfoView.tsx` and `UncommittedChanges.tsx` check `commandRunnerMode` and dispatch `getGraphiteModifyOperation()` in graphite mode, falling back to `getAmendOperation()` (git) otherwise. Chunk-level partial amend falls back to git since `gt modify --patch` requires interactive input. `AmendOperation.filePathsToAmend` changed from `private` to `protected` to allow subclass access.
 - **`gt branch create` audit** — Confirmed `gt create` and `gt branch create` are identical aliases. Updated `GraphiteCreateOperation` to use canonical `gt branch create` form (consistent with `gt branch checkout` pattern). Added `--no-interactive` flag to prevent interactive prompts in the non-interactive UI context. Args now: `['branch', 'create', '--all', '--no-interactive', '--message', msg]`.
+- **`gt state` for smartlog metadata** — `gt log` does not support `--json`, but `gt state` outputs structured JSON with branch tracking data (trunk flag, `needs_restack`, parent refs). Added `parseGraphiteState()` and `applyGraphiteState()` to `templates.ts`. `fetchSmartlogCommits()` in `Repository.ts` now calls `gt state` after `git log` and overlays metadata onto `CommitInfo` objects. Branches needing restack get a "needs restack" badge via `stableCommitMetadata`. Gracefully degrades — if `gt` is not installed or fails, git-only data is used unchanged.
 
 ### Planned (priority order)
 
-1. **`gt log --json` for smartlog** — Commit graph fetching uses raw `git log`. Optionally use `gt log --json` to get Graphite-aware stack info (parent tracking, PR status) for richer UI without needing the GitHub API.
+1. **Granular restack operations** — Add `gt upstack restack` / `gt downstack restack` as options beyond the current full `gt restack`, useful for the stack actions UI.
 
-2. **Granular restack operations** — Add `gt upstack restack` / `gt downstack restack` as options beyond the current full `gt restack`, useful for the stack actions UI.
-
-3. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.
+2. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.

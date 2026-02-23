@@ -71,9 +71,11 @@ import {GitHubCodeReviewProvider} from './github/githubCodeReviewProvider';
 import {isGithubEnterprise} from './github/queryGraphQL';
 import {
   attachStableLocations,
+  applyGraphiteState,
   getMainFetchFormat,
   parseChangedFilesOutput,
   parseCommitInfoOutput,
+  parseGraphiteState,
 } from './templates';
 import {
   findPublicAncestor,
@@ -816,6 +818,21 @@ export class Repository {
         throw new Error(ErrorShortMessages.NoCommitsFetched);
       }
       attachStableLocations(commits, this.stableLocations);
+
+      // Augment with Graphite metadata (needs_restack badges, etc.)
+      try {
+        const gtProc = await runCommand(
+          {...this.initialConnectionContext, cmd: 'gt'},
+          ['state'],
+          {},
+          5000,
+          false,
+        );
+        const graphiteState = parseGraphiteState(gtProc.stdout);
+        applyGraphiteState(commits, graphiteState);
+      } catch {
+        // gt not available or not a Graphite repo — continue with git-only data
+      }
 
       this.smartlogCommits = {
         fetchStartTimestamp,

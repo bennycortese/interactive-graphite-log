@@ -243,6 +243,59 @@ export function attachStableLocations(commits: Array<CommitInfo>, locations: Arr
   }
 }
 
+///// Graphite State /////
+
+export interface GraphiteStateEntry {
+  trunk: boolean;
+  needs_restack?: boolean;
+  parents?: Array<{ref: string; sha: string}>;
+}
+
+export type GraphiteState = Record<string, GraphiteStateEntry>;
+
+/**
+ * Parse the JSON output of `gt state` into a typed map of branch name -> metadata.
+ *
+ * Example `gt state` output:
+ * ```json
+ * {
+ *   "main": { "trunk": true },
+ *   "feature-branch": {
+ *     "trunk": false,
+ *     "needs_restack": true,
+ *     "parents": [{ "ref": "main", "sha": "abc123..." }]
+ *   }
+ * }
+ * ```
+ */
+export function parseGraphiteState(output: string): GraphiteState {
+  return JSON.parse(output.trim()) as GraphiteState;
+}
+
+/**
+ * Overlay Graphite metadata onto parsed CommitInfo objects.
+ *
+ * For each commit, checks if any of its bookmarks (local branch names) match
+ * a tracked Graphite branch. If so, annotates the commit with:
+ * - `needs_restack` badge via stableCommitMetadata
+ */
+export function applyGraphiteState(commits: Array<CommitInfo>, state: GraphiteState): void {
+  for (const commit of commits) {
+    const matchedBranch = commit.bookmarks.find(b => b in state);
+    if (!matchedBranch) continue;
+
+    const entry = state[matchedBranch];
+    if (entry.trunk) continue;
+
+    if (entry.needs_restack) {
+      commit.stableCommitMetadata = [
+        ...(commit.stableCommitMetadata ?? []),
+        {value: 'needs restack', description: 'Run gt restack to fix'},
+      ];
+    }
+  }
+}
+
 ///// Changed Files /////
 
 /**
