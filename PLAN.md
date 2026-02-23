@@ -340,6 +340,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **Granular restack operations** — Added `GraphiteUpstackRestackOperation` (`gt upstack restack --no-interactive`) and `GraphiteDownstackRestackOperation` (`gt downstack restack --no-interactive`). Wired into `StackActions.tsx` as context menu items ("Restack upstack" / "Restack downstack") alongside the existing full "Restack" button. Added corresponding `TrackEventName` entries. Upstack restacks current branch + descendants; downstack restacks trunk to current branch.
 
+- **PR status via branch-to-PR matching** — `gt branch list --json` does not exist, so pivoted to using the existing `GitHubCodeReviewProvider` which already fetches PR data via GitHub GraphQL API. Added `getBranchToDiffIdMap()` to `GitHubCodeReviewProvider` (and as optional method on `CodeReviewProvider` interface) which maps branch names from cached PR summaries to their DiffId (PR number). Added `applyDiffIds()` helper in `templates.ts` that matches commits to PRs by comparing `commit.bookmarks` against the branch-to-diffId map. Called in `fetchSmartlogCommits()` after graphite state overlay. Also added a listener in the `Repository` constructor that re-applies diffIds when PR summaries arrive after the initial commit fetch, ensuring PR badges appear even when PR data loads asynchronously. This connects `commit.diffId` (previously hardcoded to `undefined`) to actual PR numbers, enabling the existing `DiffBadge` UI to render PR status (Open/Merged/Closed, CI status, review decision) next to each commit.
+
 ### Planned (priority order)
 
-1. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.
+(All planned items completed.)

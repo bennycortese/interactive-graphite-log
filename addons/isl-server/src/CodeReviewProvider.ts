@@ -31,6 +31,9 @@ export interface CodeReviewProvider {
 
   onChangeDiffSummaries(callback: (result: Result<DiffSummaries>) => unknown): Disposable;
 
+  /** Returns a map of branch name -> DiffId (PR number) from cached PR data */
+  getBranchToDiffIdMap?(): Map<string, DiffId>;
+
   /** Run a command not handled within sapling, such as a separate submit handler */
   runExternalCommand?(
     cwd: string,

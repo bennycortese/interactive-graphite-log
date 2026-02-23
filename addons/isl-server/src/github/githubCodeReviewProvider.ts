@@ -71,6 +71,7 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
     private logger: Logger,
   ) {}
   private diffSummaries = new TypedEventEmitter<'data', Map<DiffId, GitHubDiffSummary>>();
+  private latestSummaries: Map<DiffId, GitHubDiffSummary> | undefined;
   private hasMergeQueueSupport: Promise<boolean> | null = null;
 
   onChangeDiffSummaries(
@@ -178,6 +179,7 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
           }
         }
         this.logger.info(`fetched ${map.size} github PR summaries`);
+        this.latestSummaries = map;
         this.diffSummaries.emit('data', map);
       } catch (error) {
         this.logger.info('error fetching github PR summaries: ', error);
@@ -250,6 +252,18 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
   public dispose() {
     this.diffSummaries.removeAllListeners();
     this.triggerDiffSummariesFetch.dispose();
+  }
+
+  getBranchToDiffIdMap(): Map<string, DiffId> {
+    const map = new Map<string, DiffId>();
+    if (this.latestSummaries) {
+      for (const summary of this.latestSummaries.values()) {
+        if (summary.branchName) {
+          map.set(summary.branchName, summary.number);
+        }
+      }
+    }
+    return map;
   }
 
   public getSummaryName(): string {

@@ -70,6 +70,7 @@ import {ErrorShortMessages} from './constants';
 import {GitHubCodeReviewProvider} from './github/githubCodeReviewProvider';
 import {isGithubEnterprise} from './github/queryGraphQL';
 import {
+  applyDiffIds,
   attachStableLocations,
   applyGraphiteState,
   getMainFetchFormat,
@@ -279,6 +280,26 @@ export class Repository {
     this.checkForMergeConflicts();
 
     this.disposables.push(() => subscription.dispose());
+
+    // When PR summaries arrive (possibly after initial commit fetch),
+    // apply diffIds to cached commits so PR badges appear without a refetch
+    if (this.codeReviewProvider) {
+      const diffSub = this.codeReviewProvider.onChangeDiffSummaries(result => {
+        if (result.value && this.smartlogCommits?.commits.value) {
+          const branchToDiffId = this.codeReviewProvider?.getBranchToDiffIdMap?.();
+          if (branchToDiffId && branchToDiffId.size > 0) {
+            const commits = this.smartlogCommits.commits.value;
+            const previousDiffIds = commits.map(c => c.diffId);
+            applyDiffIds(commits, branchToDiffId);
+            const changed = commits.some((c, i) => c.diffId !== previousDiffIds[i]);
+            if (changed) {
+              this.smartlogCommitsChangesEmitter.emit('change', this.smartlogCommits);
+            }
+          }
+        }
+      });
+      this.disposables.push(() => diffSub.dispose());
+    }
 
     this.applyConfigInBackground(ctx);
 
@@ -832,6 +853,12 @@ export class Repository {
         applyGraphiteState(commits, graphiteState);
       } catch {
         // gt not available or not a Graphite repo — continue with git-only data
+      }
+
+      // Match commits to PRs by branch name to enable PR status badges
+      const branchToDiffId = this.codeReviewProvider?.getBranchToDiffIdMap?.();
+      if (branchToDiffId && branchToDiffId.size > 0) {
+        applyDiffIds(commits, branchToDiffId);
       }
 
       this.smartlogCommits = {

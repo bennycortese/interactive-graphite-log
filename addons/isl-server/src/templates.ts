@@ -10,6 +10,7 @@ import type {
   CodeReviewSystem,
   CommitInfo,
   CommitPhaseType,
+  DiffId,
   Hash,
   RepoRelativePath,
   SmartlogCommits,
@@ -292,6 +293,28 @@ export function applyGraphiteState(commits: Array<CommitInfo>, state: GraphiteSt
         ...(commit.stableCommitMetadata ?? []),
         {value: 'needs restack', description: 'Run gt restack to fix'},
       ];
+    }
+  }
+}
+
+///// PR / DiffId Matching /////
+
+/**
+ * Set `diffId` on commits by matching their bookmarks (local branch names)
+ * to PR branch names from the code review provider.
+ *
+ * This connects commits to their associated Pull Requests, enabling
+ * the PR status badge (Open/Merged/Closed, CI status, review decision)
+ * to appear next to each commit in the UI.
+ */
+export function applyDiffIds(
+  commits: Array<CommitInfo>,
+  branchToDiffId: Map<string, DiffId>,
+): void {
+  for (const commit of commits) {
+    const matchedBranch = commit.bookmarks.find(b => branchToDiffId.has(b));
+    if (matchedBranch) {
+      commit.diffId = branchToDiffId.get(matchedBranch);
     }
   }
 }

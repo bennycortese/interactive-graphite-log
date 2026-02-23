@@ -3,7 +3,8 @@
     "allow": [
       "Bash(/c/Users/antho/benny_stuff/interactive-graphite-log/addons/node_modules/.bin/tsc:*)",
       "Bash(npx tsc:*)",
-      "Bash(gt:*)"
+      "Bash(gt:*)",
+      "Bash(node_modules/.bin/tsc:*)"
     ]
   }
 }
