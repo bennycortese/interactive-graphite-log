@@ -74,6 +74,8 @@ export type TrackEventName =
   | 'GhStackSubmitOperation'
   | 'GraphiteSubmitOperation'
   | 'GraphiteRestackOperation'
+  | 'GraphiteUpstackRestackOperation'
+  | 'GraphiteDownstackRestackOperation'
   | 'GraphiteCreateOperation'
   | 'GotoOperation'
   | 'GoBackToOldISL'

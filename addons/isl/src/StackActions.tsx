@@ -25,7 +25,9 @@ import {T, t} from './i18n';
 import {IconStack} from './icons/IconStack';
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {useRunOperation} from './operationsState';
+import {GraphiteDownstackRestackOperation} from './operations/GraphiteDownstackRestackOperation';
 import {GraphiteRestackOperation} from './operations/GraphiteRestackOperation';
+import {GraphiteUpstackRestackOperation} from './operations/GraphiteUpstackRestackOperation';
 import {useUncommittedSelection} from './partialSelection';
 import {dagWithPreviews} from './previews';
 import {latestUncommittedChangesData} from './serverAPIState';
@@ -232,7 +234,7 @@ export function StackActions({hash}: {hash: Hash}): React.ReactElement | null {
     actions.push(<StackEditButton key="edit-stack" info={info} />);
   }
 
-  // Graphite-mode: show "Restack" button when the current commit has children.
+  // Graphite-mode: show "Restack" button and granular restack options.
   // After amending, dependent branches need to be rebased onto the new version.
   if (runnerMode === 'graphite' && hasChildren) {
     actions.push(
@@ -240,7 +242,7 @@ export function StackActions({hash}: {hash: Hash}): React.ReactElement | null {
         key="gt-restack"
         placement="bottom"
         title={t(
-          'Restack dependent branches onto the latest version of this commit using `gt restack`.',
+          'Restack all branches in the current stack using `gt restack`.',
         )}>
         <OperationDisabledButton
           contextKey={`gt-restack-${hash}`}
@@ -251,6 +253,28 @@ export function StackActions({hash}: {hash: Hash}): React.ReactElement | null {
         </OperationDisabledButton>
       </Tooltip>,
     );
+    moreActions.push({
+      label: (
+        <Row>
+          <Icon icon="arrow-up" slot="start" />
+          <T>Restack upstack</T>
+        </Row>
+      ),
+      onClick: () => {
+        runOperation(new GraphiteUpstackRestackOperation());
+      },
+    });
+    moreActions.push({
+      label: (
+        <Row>
+          <Icon icon="arrow-down" slot="start" />
+          <T>Restack downstack</T>
+        </Row>
+      ),
+      onClick: () => {
+        runOperation(new GraphiteDownstackRestackOperation());
+      },
+    });
   }
 
   if (showCleanupButton) {

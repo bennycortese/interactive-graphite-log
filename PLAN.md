@@ -338,8 +338,8 @@ The codebase compiles and all Sapling command references have been replaced with
 - **`gt branch create` audit** — Confirmed `gt create` and `gt branch create` are identical aliases. Updated `GraphiteCreateOperation` to use canonical `gt branch create` form (consistent with `gt branch checkout` pattern). Added `--no-interactive` flag to prevent interactive prompts in the non-interactive UI context. Args now: `['branch', 'create', '--all', '--no-interactive', '--message', msg]`.
 - **`gt state` for smartlog metadata** — `gt log` does not support `--json`, but `gt state` outputs structured JSON with branch tracking data (trunk flag, `needs_restack`, parent refs). Added `parseGraphiteState()` and `applyGraphiteState()` to `templates.ts`. `fetchSmartlogCommits()` in `Repository.ts` now calls `gt state` after `git log` and overlays metadata onto `CommitInfo` objects. Branches needing restack get a "needs restack" badge via `stableCommitMetadata`. Gracefully degrades — if `gt` is not installed or fails, git-only data is used unchanged.
 
+- **Granular restack operations** — Added `GraphiteUpstackRestackOperation` (`gt upstack restack --no-interactive`) and `GraphiteDownstackRestackOperation` (`gt downstack restack --no-interactive`). Wired into `StackActions.tsx` as context menu items ("Restack upstack" / "Restack downstack") alongside the existing full "Restack" button. Added corresponding `TrackEventName` entries. Upstack restacks current branch + descendants; downstack restacks trunk to current branch.
+
 ### Planned (priority order)
 
-1. **Granular restack operations** — Add `gt upstack restack` / `gt downstack restack` as options beyond the current full `gt restack`, useful for the stack actions UI.
-
-2. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.
+1. **PR status via `gt branch list --json`** — Returns PR merge/review status per branch. Could feed into the code review sidebar without separate GitHub API calls.
