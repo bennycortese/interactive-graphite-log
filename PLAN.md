@@ -344,4 +344,71 @@ The codebase compiles and all Sapling command references have been replaced with
 
 ### Planned (priority order)
 
-(All planned items completed.)
+#### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
+
+Many operations in `addons/isl/src/operations/` still emit Sapling CLI commands (`sl shelve`, `sl fold`, `sl hide`, etc.) that don't exist in git/Graphite. These will error if a user triggers them through the UI. They need to be either **converted to git/Graphite equivalents** or **removed/disabled** if no equivalent exists.
+
+For operations that have a `gt` equivalent, we should follow the same dual-mode pattern established by `GraphiteModifyOperation` etc.: create a Graphite operation class and dispatch it when `commandRunnerMode === 'graphite'`, falling back to the git version otherwise.
+
+**Graphite CLI reference** (relevant commands):
+- `gt fold` — Fold current branch into parent, restack descendants
+- `gt delete [name] [--force] [--close]` — Delete branch + Graphite metadata, restack children onto parent
+- `gt pop` — Delete current branch but keep working tree changes (≈ uncommit)
+- `gt squash [-m msg] [--no-edit]` — Squash all commits in current branch into one, restack
+- `gt move --onto <branch> [--source <branch>]` — Rebase branch onto target, restack descendants
+- `gt absorb [--force] [--all]` — Amend staged changes to relevant commits in current stack
+- `gt split [--by-commit | --by-hunk | --by-file <pathspec>]` — Split current branch into multiple
+- `gt merge [--dry-run]` — Merge PRs from trunk to current branch via Graphite
+- `gt continue` / `gt abort` — Continue/abort after rebase conflict
+- `gt undo [--force]` — Undo most recent Graphite mutation
+- `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
+- `gt untrack [branch]` — Stop tracking a branch
+- `gt rename [name]` — Rename a branch and update metadata
+
+1. **Fold → `gt fold`** — `FoldOperation` uses Sapling `fold --exact REVSET`. Graphite has a direct equivalent: `gt fold` folds the current branch into its parent and restacks descendants. In graphite mode, create `GraphiteFoldOperation` that runs `gt fold --no-interactive`. For git mode, use `git reset --soft` to the bottom commit's parent + `git commit` with the combined message (non-interactive squash). Note: `gt fold` only folds into the parent branch (not arbitrary ranges), so the UI should only offer fold for adjacent branches in a stack.
+
+2. **Hide → `gt delete`** — `HideOperation` uses Sapling `hide --rev`. Graphite equivalent: `gt delete <branch> --force --no-interactive` deletes the branch, removes Graphite metadata, and restacks children onto the parent. In git mode, `git branch -D <name>` to delete the branch. Replace the "Hide" context menu item with "Delete branch" that dispatches `GraphiteDeleteOperation` in graphite mode. Options: `--close` to also close the associated PR on GitHub, `--upstack` to delete the branch and all its children.
+
+3. **Uncommit → `gt pop`** — `Uncommit.ts` uses Sapling `uncommit`. Graphite equivalent: `gt pop` deletes the current branch but retains working tree changes (effectively "uncommits" while preserving the file state). In git mode, `git reset --soft HEAD~1`. Create `GraphitePopOperation` for graphite mode.
+
+4. **Shelve → `git stash`** — No `gt` equivalent for stashing. `ShelveOperation` uses `shelve --unknown`, `UnshelveOperation` uses `unshelve --keep --name`, `DeleteShelveOperation` uses `shelve --delete`. Convert to `git stash push [-m name] [-- files]`, `git stash pop/apply`, `git stash drop`. The server-side `getShelvedChanges()` also needs to use `git stash list --format=...` to return stash entries. Note: git stash doesn't support named stashes the same way — will need to match by message.
+
+5. **Graft → `git cherry-pick`** — `GraftOperation` uses Sapling `graft REVSET`. Direct git equivalent: `git cherry-pick <hash>`. No `gt` equivalent needed — cherry-pick is a git-level operation.
+
+6. **Bookmark operations → `git branch`** — `BookmarkCreateOperation` uses `bookmark NAME --rev REV`. Convert to `git branch NAME REV`. `BookmarkDeleteOperation` uses `bookmark --delete NAME`. Convert to `git branch -d NAME`. In graphite mode, `gt track` could be wired for creating tracked branches, `gt untrack` + `git branch -d` for deletion.
+
+7. **AddRemove → `git add -A`** — `AddRemoveOperation` uses Sapling `addremove`. Git equivalent: `git add -A` (stages all adds/removes).
+
+8. **PushOperation → `git push`** — Uses Sapling `push --rev REVSET --to BRANCH`. Convert to `git push origin HEAD:BRANCH` or just `git push`. In graphite mode, `gt submit` already handles pushing branches — this may not be needed separately.
+
+9. **AmendTo → `gt absorb`** — `AmendToOperation` uses Sapling `amend --to` (amend staged changes to a non-HEAD commit in the stack). Graphite has a powerful equivalent: `gt absorb --force --no-interactive` automatically distributes staged hunks to the right commits in the current stack. Create `GraphiteAbsorbOperation`. Git fallback: not directly possible without interactive rebase — could disable in git mode.
+
+10. **Conflict handling → `gt continue` / `gt abort`** — `ContinueMergeOperation` uses `git rebase --continue` and `AbortMergeOperation` uses `git rebase --abort`. In graphite mode, should use `gt continue` and `gt abort` instead, since Graphite tracks rebase state and needs its own continue/abort to maintain metadata. Create `GraphiteContinueOperation` and `GraphiteAbortOperation`.
+
+11. **Other broken operations to remove/stub** — `PullRevOperation` (pull specific rev — not a git/gt concept), `RebaseKeepOperation` (rebase with --keep — Sapling-specific), `RebaseAllDraftCommitsOperation` (uses `draft()` revset — no equivalent), `RunMergeDriversOperation` (uses `resolve --all` — Sapling-specific), `ImportStackOperation` (uses `debugimportstack` — Sapling-only), `CreateEmptyInitialCommitOperation` (niche, low priority). These should be stubbed to no-op or removed from the UI.
+
+#### Phase 2: Leverage more Graphite stack features
+
+12. **`gt move` for Rebase** — `RebaseOperation` uses `git rebase --onto`. Graphite equivalent: `gt move --onto <branch> --source <branch> --no-interactive` rebases the branch and automatically restacks all descendants. Create `GraphiteMoveOperation` that dispatches in graphite mode. This is better than raw `git rebase` because it maintains Graphite metadata and handles descendant restacking.
+
+13. **`gt split` for Split** — The stack edit UI exists (`SplitStackEditPanel.tsx`) but split operations use Sapling internals. Graphite supports `gt split --by-file <pathspec>` non-interactively (the `--by-commit` and `--by-hunk` modes require interactive input). Wire `gt split --by-file` as a non-interactive split option in graphite mode.
+
+14. **`gt squash` for multi-commit branches** — `gt squash [-m msg] [--no-edit] --no-interactive` squashes all commits in the current branch into one and restacks. Useful when a branch has accumulated fixup commits. Could add as a context menu action on branches with multiple commits.
+
+15. **`gt merge` for landing PRs** — `gt merge` merges all PRs from trunk to the current branch via Graphite's merge queue. This is the Graphite-native way to land stacked PRs. Add a "Merge stack" button that runs `gt merge --no-interactive`. Supports `--dry-run` for previewing. This replaces the need for raw GitHub `mergePullRequest` API calls.
+
+#### Phase 3: Improve code review integration
+
+16. **PR comment replies** — The `DiffComments` component can display comments fetched from GitHub but there's no reply UI. Add a comment input box that calls `addComment` or `addPullRequestReviewComment` GitHub GraphQL mutation. This enables code review workflow entirely within the UI.
+
+17. **Commit message ↔ PR description sync** — `enableMessageSyncing` is currently `false` in `GithubUICodeReviewProvider`. When enabled, amending a commit message could update the PR title/description via `updatePullRequest` mutation, and vice versa. Note: `gt submit` already syncs commit messages to PR descriptions — could just re-submit after amending.
+
+18. **`gt undo` integration** — `gt undo --force --no-interactive` undoes the most recent Graphite mutation. Wire as an "Undo" button in the UI that appears after Graphite operations complete. Useful for recovering from accidental folds, deletes, or moves.
+
+#### Phase 4: UX polish
+
+19. **Trunk branch configuration** — Currently hardcoded to detect `origin/main` as the public base. `gt` already stores its trunk config (set via `gt init`). Read from `gt trunk` output or the Graphite config file to detect the trunk branch automatically. Add a fallback UI setting for non-Graphite repos.
+
+20. **Stack grouping in UI** — `gt state` gives us parent-child branch relationships. Use this to visually group stacked branches in the commit graph (e.g., indentation, colored connectors, or collapsible stack sections).
+
+21. **Conflict resolution improvements** — Currently merge conflicts are detected and shown, but resolution requires an external merge tool. In graphite mode, `gt continue` / `gt abort` should be surfaced prominently. Could add inline 3-way diff view or at minimum better guidance for resolving conflicts within the UI.
