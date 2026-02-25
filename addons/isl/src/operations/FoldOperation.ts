@@ -10,7 +10,6 @@ import type {CommitInfo} from '../types';
 
 import {firstLine} from 'shared/utils';
 import {CommitPreview} from '../previews';
-import {exactRevset} from '../types';
 import {Operation} from './Operation';
 
 /**
@@ -22,26 +21,32 @@ function ends<T>(range: Array<T>): [T, T] {
 
 export class FoldOperation extends Operation {
   constructor(
-    private foldRange: Array<CommitInfo>,
+    protected foldRange: Array<CommitInfo>,
     newMessage: string,
   ) {
     super('FoldOperation');
     this.newTitle = firstLine(newMessage);
     this.newDescription = newMessage.substring(firstLine(newMessage).length + 1);
   }
-  private newTitle: string;
-  private newDescription: string;
+  protected newTitle: string;
+  protected newDescription: string;
 
   static opName = 'Fold';
 
+  /**
+   * Git mode: use `git reset --soft <parent-of-bottom>` to collapse the
+   * fold range into staged changes. This is a partial fold — the user will
+   * see the changes as uncommitted and can commit with the desired message.
+   *
+   * For a full fold experience, use graphite mode (`gt fold`).
+   */
   getArgs() {
-    const [bottom, top] = ends(this.foldRange);
+    const [bottom] = ends(this.foldRange);
+    const parentHash = bottom.parents[0];
     return [
-      'fold',
-      '--exact',
-      exactRevset(`${bottom.hash}::${top.hash}`),
-      '--message',
-      `${this.newTitle}\n${this.newDescription}`,
+      'reset',
+      '--soft',
+      parentHash,
     ];
   }
 

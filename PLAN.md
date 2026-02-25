@@ -342,11 +342,13 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **PR status via branch-to-PR matching** — `gt branch list --json` does not exist, so pivoted to using the existing `GitHubCodeReviewProvider` which already fetches PR data via GitHub GraphQL API. Added `getBranchToDiffIdMap()` to `GitHubCodeReviewProvider` (and as optional method on `CodeReviewProvider` interface) which maps branch names from cached PR summaries to their DiffId (PR number). Added `applyDiffIds()` helper in `templates.ts` that matches commits to PRs by comparing `commit.bookmarks` against the branch-to-diffId map. Called in `fetchSmartlogCommits()` after graphite state overlay. Also added a listener in the `Repository` constructor that re-applies diffIds when PR summaries arrive after the initial commit fetch, ensuring PR badges appear even when PR data loads asynchronously. This connects `commit.diffId` (previously hardcoded to `undefined`) to actual PR numbers, enabling the existing `DiffBadge` UI to render PR status (Open/Merged/Closed, CI status, review decision) next to each commit.
 
+- **`gt fold` for Combine/Fold** — New `GraphiteFoldOperation` extends `FoldOperation` and uses `CommandRunner.Graphite` to run `gt fold --no-interactive`. Folds the current branch into its parent and restacks descendants — the Graphite-native way to combine adjacent branches in a stack. `fold.tsx` dispatches `GraphiteFoldOperation` when `commandRunnerMode === 'graphite'`, falling back to `FoldOperation` (git) otherwise. Git mode `FoldOperation.getArgs()` updated from broken Sapling `fold --exact REVSET` to `git reset --soft <parent-hash>` (collapses fold range into staged changes). `FoldOperation.foldRange` and message fields changed from `private` to `protected` for subclass access. Added `GraphiteFoldOperation` to `TrackEventName`.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
 
-Many operations in `addons/isl/src/operations/` still emit Sapling CLI commands (`sl shelve`, `sl fold`, `sl hide`, etc.) that don't exist in git/Graphite. These will error if a user triggers them through the UI. They need to be either **converted to git/Graphite equivalents** or **removed/disabled** if no equivalent exists.
+Many operations in `addons/isl/src/operations/` still emit Sapling CLI commands (`sl shelve`, `sl hide`, etc.) that don't exist in git/Graphite. These will error if a user triggers them through the UI. They need to be either **converted to git/Graphite equivalents** or **removed/disabled** if no equivalent exists.
 
 For operations that have a `gt` equivalent, we should follow the same dual-mode pattern established by `GraphiteModifyOperation` etc.: create a Graphite operation class and dispatch it when `commandRunnerMode === 'graphite'`, falling back to the git version otherwise.
 
@@ -365,9 +367,7 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
 
-1. **Fold → `gt fold`** — `FoldOperation` uses Sapling `fold --exact REVSET`. Graphite has a direct equivalent: `gt fold` folds the current branch into its parent and restacks descendants. In graphite mode, create `GraphiteFoldOperation` that runs `gt fold --no-interactive`. For git mode, use `git reset --soft` to the bottom commit's parent + `git commit` with the combined message (non-interactive squash). Note: `gt fold` only folds into the parent branch (not arbitrary ranges), so the UI should only offer fold for adjacent branches in a stack.
-
-2. **Hide → `gt delete`** — `HideOperation` uses Sapling `hide --rev`. Graphite equivalent: `gt delete <branch> --force --no-interactive` deletes the branch, removes Graphite metadata, and restacks children onto the parent. In git mode, `git branch -D <name>` to delete the branch. Replace the "Hide" context menu item with "Delete branch" that dispatches `GraphiteDeleteOperation` in graphite mode. Options: `--close` to also close the associated PR on GitHub, `--upstack` to delete the branch and all its children.
+1. **Hide → `gt delete`** — `HideOperation` uses Sapling `hide --rev`. Graphite equivalent: `gt delete <branch> --force --no-interactive` deletes the branch, removes Graphite metadata, and restacks children onto the parent. In git mode, `git branch -D <name>` to delete the branch. Replace the "Hide" context menu item with "Delete branch" that dispatches `GraphiteDeleteOperation` in graphite mode. Options: `--close` to also close the associated PR on GitHub, `--upstack` to delete the branch and all its children.
 
 3. **Uncommit → `gt pop`** — `Uncommit.ts` uses Sapling `uncommit`. Graphite equivalent: `gt pop` deletes the current branch but retains working tree changes (effectively "uncommits" while preserving the file state). In git mode, `git reset --soft HEAD~1`. Create `GraphitePopOperation` for graphite mode.
 

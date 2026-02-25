@@ -12,6 +12,7 @@ import {Icon} from 'isl-components/Icon';
 import {Tooltip} from 'isl-components/Tooltip';
 import {atom, useAtomValue} from 'jotai';
 import {useCallback} from 'react';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {editedCommitMessages} from './CommitInfoView/CommitInfoState';
 import {
   applyEditedFields,
@@ -27,10 +28,19 @@ import {
   FoldOperation,
   getFoldRangeCommitHash,
 } from './operations/FoldOperation';
+import {GraphiteFoldOperation} from './operations/GraphiteFoldOperation';
 import {operationBeingPreviewed, useRunPreviewedOperation} from './operationsState';
 import {type Dag, dagWithPreviews} from './previews';
 import {selectedCommits} from './selection';
 import {firstOfIterable} from './utils';
+
+function createFoldOperation(foldRange: Array<CommitInfo>, message: string): FoldOperation {
+  const runnerMode = readAtom(commandRunnerMode);
+  if (runnerMode === 'graphite') {
+    return new GraphiteFoldOperation(foldRange, message);
+  }
+  return new FoldOperation(foldRange, message);
+}
 
 /**
  * If the selected commits are linear, contiguous, and non-branching, they may be folded together.
@@ -51,7 +61,7 @@ export const foldableSelection = atom(get => {
  * Given a set of selected commits, order them into an array from bottom to top.
  * If commits are not contiguous, returns undefined.
  * This selection must be linear and contiguous: no branches out are allowed.
- * This constitutes a set of commits that may be "folded"/combined into a single commit via `sl fold`.
+ * This constitutes a set of commits that may be "folded"/combined into a single commit.
  */
 export function getFoldableRange(selection: Set<Hash>, dag: Dag): Array<CommitInfo> | undefined {
   const set = dag.present(selection);
@@ -87,7 +97,7 @@ export function FoldButton({commit}: {commit?: CommitInfo}) {
       foldable.map(commit => parseCommitMessageFields(schema, commit.title, commit.description)),
     );
     const message = commitMessageFieldsToString(schema, messageFields);
-    writeAtom(operationBeingPreviewed, new FoldOperation(foldable, message));
+    writeAtom(operationBeingPreviewed, createFoldOperation(foldable, message));
     writeAtom(selectedCommits, new Set([getFoldRangeCommitHash(foldable, /* isPreview */ true)]));
   }, [foldable]);
   if (foldable == null || (commit != null && foldable?.[0]?.hash !== commit.hash)) {
@@ -125,7 +135,7 @@ export function updateFoldedMessageWithEditedMessage(): FoldOperation | undefine
 
     const newMessage = commitMessageFieldsToString(schema, message);
 
-    return new FoldOperation(range, newMessage);
+    return createFoldOperation(range, newMessage);
   }
 }
 
