@@ -25,6 +25,7 @@ import type {
   Revset,
   RunnableOperation,
   SettableConfigName,
+  ShelvedChange,
   StableInfo,
   ValidatedRepoInfo,
 } from 'isl/src/types';
@@ -988,7 +989,68 @@ export class Repository {
     return filesSample;
   }
 
-  // getShelvedChanges removed - shelve is Sapling-specific, deferred for MVP
+  /**
+   * List git stash entries as ShelvedChange objects.
+   *
+   * Uses `git stash list` with a custom format to get hash, date, and message,
+   * then `git stash show --name-status` for each entry to get changed files.
+   */
+  public async getShelvedChanges(ctx: RepositoryContext): Promise<Array<ShelvedChange>> {
+    const listOutput = (
+      await this.runCommand(
+        // Format: hash<tab>unix-timestamp<tab>message
+        ['stash', 'list', '--format=%H\t%at\t%s'],
+        'GetShelvesCommand',
+        ctx,
+      )
+    ).stdout.trim();
+
+    if (!listOutput) {
+      return [];
+    }
+
+    const lines = listOutput.split('\n');
+    const results: Array<ShelvedChange> = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const parts = lines[i].split('\t');
+      if (parts.length < 3) continue;
+
+      const [hash, timestampStr, ...messageParts] = parts;
+      const message = messageParts.join('\t');
+      const stashRef = `stash@{${i}}`;
+
+      // Get changed files for this stash entry
+      let filesSample: Array<ChangedFile> = [];
+      let totalFileCount = 0;
+      try {
+        const showOutput = (
+          await this.runCommand(
+            ['stash', 'show', '--name-status', stashRef],
+            undefined,
+            ctx,
+          )
+        ).stdout;
+        const parsed = parseChangedFilesOutput(showOutput);
+        filesSample = parsed.filesSample;
+        totalFileCount = parsed.totalFileCount;
+      } catch {
+        // If we can't get files for a stash, still include it with empty files
+      }
+
+      results.push({
+        hash,
+        name: message,
+        date: new Date(parseInt(timestampStr, 10) * 1000),
+        filesSample,
+        totalFileCount,
+        description: '',
+        stashRef,
+      });
+    }
+
+    return results;
+  }
 
   public getAllDiffIds(): Array<DiffId> {
     return (

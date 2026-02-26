@@ -16,8 +16,11 @@ export class DeleteShelveOperation extends Operation {
 
   static opName = 'Unshelve';
 
+  /**
+   * Git mode: `git stash drop` removes the stash entry by ref.
+   */
   getArgs() {
-    const args = ['shelve', '--delete', this.shelvedChange.name];
-    return args;
+    const ref = this.shelvedChange.stashRef ?? 'stash@{0}';
+    return ['stash', 'drop', ref];
   }
 }

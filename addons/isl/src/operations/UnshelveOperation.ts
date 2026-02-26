@@ -23,13 +23,14 @@ export class UnshelveOperation extends Operation {
 
   static opName = 'Unshelve';
 
+  /**
+   * Git mode: `git stash apply` (keep=true) or `git stash pop` (keep=false).
+   * The stash entry is identified by its stashRef (e.g. "stash@{0}").
+   */
   getArgs() {
-    const args = ['unshelve'];
-    if (this.keep) {
-      args.push('--keep');
-    }
-    args.push('--name', this.shelvedChange.name);
-    return args;
+    const subcommand = this.keep ? 'apply' : 'pop';
+    const ref = this.shelvedChange.stashRef ?? 'stash@{0}';
+    return ['stash', subcommand, ref];
   }
 
   makeOptimisticUncommittedChangesApplier?(

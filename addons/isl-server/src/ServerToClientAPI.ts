@@ -632,8 +632,14 @@ export default class ServerToClientAPI {
         break;
       }
       case 'fetchShelvedChanges': {
-        // Shelve is Sapling-specific; not supported for git/graphite
-        this.postMessage({type: 'fetchedShelvedChanges', shelvedChanges: {value: []}});
+        repo
+          .getShelvedChanges(ctx)
+          .then(shelvedChanges => {
+            this.postMessage({type: 'fetchedShelvedChanges', shelvedChanges: {value: shelvedChanges}});
+          })
+          .catch((error: Error) => {
+            this.postMessage({type: 'fetchedShelvedChanges', shelvedChanges: {error}});
+          });
         break;
       }
       case 'fetchLatestCommit': {

@@ -348,6 +348,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **`gt delete` for Hide** — New `GraphiteDeleteOperation` extends `HideOperation` and uses `CommandRunner.Graphite` to run `gt delete <branch> --force --no-interactive`. Deletes the branch and its Graphite metadata, restacking children onto the parent — the Graphite-native way to hide/remove a branch from a stack. `HideOperation` updated to accept an optional `branchName` parameter: in git mode uses `git branch -D <name>` (falls back to no-op `git status` if no branch name available). All 3 UI dispatch points updated with mode-aware dispatch: `Commit.tsx` (context menu), `selection.ts` (keyboard shortcut), `Cleanup.tsx` (cleanup button + cleanup all). Each passes `commit.bookmarks[0]` as the branch name. Constructor fields changed from `private` to `protected` for subclass access. Added `GraphiteDeleteOperation` to `TrackEventName`.
 
+- **Shelve → `git stash`** — Converted all three shelve operations from Sapling CLI to git stash equivalents. No `gt` equivalent exists for stashing. `ShelveOperation.getArgs()` updated from `sl shelve --unknown` to `git stash push --include-untracked` (with optional `-m name` and `-- files` for partial shelves). `UnshelveOperation.getArgs()` updated from `sl unshelve --keep --name` to `git stash apply/pop <stashRef>` (apply when keep=true, pop when keep=false). `DeleteShelveOperation.getArgs()` updated from `sl shelve --delete` to `git stash drop <stashRef>`. Added `stashRef` optional field to `ShelvedChange` type to identify stash entries by their git ref (e.g. `stash@{0}`). Implemented `getShelvedChanges()` on `Repository` using `git stash list --format=%H\t%at\t%s` to enumerate stash entries and `git stash show --name-status` for each entry's changed files. `ServerToClientAPI.ts` updated to call `repo.getShelvedChanges()` instead of returning an empty stub. Optimistic UI previews preserved from the original operations.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -370,8 +372,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-4. **Shelve → `git stash`** — No `gt` equivalent for stashing. `ShelveOperation` uses `shelve --unknown`, `UnshelveOperation` uses `unshelve --keep --name`, `DeleteShelveOperation` uses `shelve --delete`. Convert to `git stash push [-m name] [-- files]`, `git stash pop/apply`, `git stash drop`. The server-side `getShelvedChanges()` also needs to use `git stash list --format=...` to return stash entries. Note: git stash doesn't support named stashes the same way — will need to match by message.
 
 5. **Graft → `git cherry-pick`** — `GraftOperation` uses Sapling `graft REVSET`. Direct git equivalent: `git cherry-pick <hash>`. No `gt` equivalent needed — cherry-pick is a git-level operation.
 

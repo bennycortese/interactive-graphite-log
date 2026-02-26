@@ -28,12 +28,18 @@ export class ShelveOperation extends Operation {
 
   static opName = 'Shelve';
 
+  /**
+   * Git mode: `git stash push` with optional `-m name` and `-- files`.
+   * `--include-untracked` ensures new (untracked) files are also stashed,
+   * matching the Sapling `shelve --unknown` behaviour.
+   */
   getArgs() {
-    const args: Array<CommandArg> = ['shelve', '--unknown'];
+    const args: Array<CommandArg> = ['stash', 'push', '--include-untracked'];
     if (this.name) {
-      args.push('--name', this.name);
+      args.push('-m', this.name);
     }
     if (this.filesPathsToCommit) {
+      args.push('--');
       args.push(
         ...this.filesPathsToCommit.map(file =>
           // tag file arguments specially so the remote repo can convert them to the proper cwd-relative format.

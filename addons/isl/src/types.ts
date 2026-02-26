@@ -546,6 +546,8 @@ export type ShelvedChange = {
   filesSample: Array<ChangedFile>;
   totalFileCount: number;
   description: string;
+  /** Git stash ref, e.g. "stash@{0}". Used by git stash apply/pop/drop. */
+  stashRef?: string;
 };
 
 export enum CommitCloudBackupStatus {
