@@ -20,7 +20,9 @@ import {islDrawerState} from './drawerState';
 import {findPublicBaseAncestor} from './getCommitTree';
 import {t} from './i18n';
 import {readAtom, useAtomHas, writeAtom} from './jotaiUtils';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {BulkRebaseOperation} from './operations/BulkRebaseOperation';
+import {GraphiteDeleteOperation} from './operations/GraphiteDeleteOperation';
 import {HideOperation} from './operations/HideOperation';
 import {RebaseOperation} from './operations/RebaseOperation';
 import {operationBeingPreviewed, useRunOperation} from './operationsState';
@@ -341,10 +343,14 @@ export function useBackspaceToHideSelected(): void {
       return;
     }
 
-    writeAtom(
-      operationBeingPreviewed,
-      new HideOperation(latestSuccessorUnlessExplicitlyObsolete(commitToHide)),
-    );
+    const revset = latestSuccessorUnlessExplicitlyObsolete(commitToHide);
+    const branch = commitToHide.bookmarks[0];
+    const runnerMode = readAtom(commandRunnerMode);
+    const op =
+      runnerMode === 'graphite' && branch
+        ? new GraphiteDeleteOperation(revset, branch)
+        : new HideOperation(revset, branch);
+    writeAtom(operationBeingPreviewed, op);
   }, []);
 
   useCommand('HideSelectedCommits', cb);

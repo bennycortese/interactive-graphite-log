@@ -62,6 +62,7 @@ import {CONFLICT_SIDE_LABELS} from './mergeConflicts/consts';
 import {getAmendToOperation, isAmendToAllowedForCommit} from './operationUtils';
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {GotoOperation} from './operations/GotoOperation';
+import {GraphiteDeleteOperation} from './operations/GraphiteDeleteOperation';
 import {HideOperation} from './operations/HideOperation';
 import {
   inlineProgressByHash,
@@ -370,11 +371,16 @@ export const Commit = memo(
         });
         items.push({
           label: hasChildren ? <T>Hide Commit and Descendants</T> : <T>Hide Commit</T>,
-          onClick: () =>
-            writeAtom(
-              operationBeingPreviewed,
-              new HideOperation(latestSuccessorUnlessExplicitlyObsolete(commit)),
-            ),
+          onClick: () => {
+            const revset = latestSuccessorUnlessExplicitlyObsolete(commit);
+            const branch = commit.bookmarks[0];
+            const runnerMode = readAtom(commandRunnerMode);
+            const op =
+              runnerMode === 'graphite' && branch
+                ? new GraphiteDeleteOperation(revset, branch)
+                : new HideOperation(revset, branch);
+            writeAtom(operationBeingPreviewed, op);
+          },
           loggingLabel: 'Hide Commit',
         });
       }

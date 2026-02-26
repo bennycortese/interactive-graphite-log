@@ -14,8 +14,11 @@ import {Tooltip} from 'isl-components/Tooltip';
 import {useAtomValue} from 'jotai';
 import {nullthrows} from 'shared/utils';
 import {OperationDisabledButton} from './OperationDisabledButton';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {allDiffSummaries, codeReviewProvider} from './codeReview/CodeReviewInfo';
 import {t, T} from './i18n';
+import {readAtom} from './jotaiUtils';
+import {GraphiteDeleteOperation} from './operations/GraphiteDeleteOperation';
 import {HideOperation} from './operations/HideOperation';
 import {useRunOperation} from './operationsState';
 import {type Dag, dagWithPreviews} from './previews';
@@ -65,7 +68,14 @@ export function CleanupButton({commit, hasChildren}: {commit: CommitInfo; hasChi
       <Button
         icon
         onClick={() => {
-          runOperation(new HideOperation(latestSuccessorUnlessExplicitlyObsolete(commit)));
+          const revset = latestSuccessorUnlessExplicitlyObsolete(commit);
+          const branch = commit.bookmarks[0];
+          const runnerMode = readAtom(commandRunnerMode);
+          const op =
+            runnerMode === 'graphite' && branch
+              ? new GraphiteDeleteOperation(revset, branch)
+              : new HideOperation(revset, branch);
+          runOperation(op);
         }}>
         <Icon icon="eye-closed" slot="start" />
         {hasChildren ? <T>Clean up stack</T> : <T>Clean up</T>}
@@ -98,9 +108,14 @@ export function CleanupAllButton() {
       <OperationDisabledButton
         contextKey="cleanup-all"
         runOperation={() => {
+          const runnerMode = readAtom(commandRunnerMode);
           return cleanableStacks.map(hash => {
             const info = nullthrows(dag.get(hash));
-            return new HideOperation(latestSuccessorUnlessExplicitlyObsolete(info));
+            const revset = latestSuccessorUnlessExplicitlyObsolete(info);
+            const branch = info.bookmarks[0];
+            return runnerMode === 'graphite' && branch
+              ? new GraphiteDeleteOperation(revset, branch)
+              : new HideOperation(revset, branch);
           });
         }}
         icon={<Icon icon="eye-closed" slot="start" />}

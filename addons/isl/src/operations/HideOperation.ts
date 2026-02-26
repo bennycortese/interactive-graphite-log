@@ -12,17 +12,30 @@ import {CommitPreview} from '../previews';
 import {Operation} from './Operation';
 
 export class HideOperation extends Operation {
-  constructor(private source: SucceedableRevset | ExactRevset | OptimisticRevset) {
+  constructor(
+    protected source: SucceedableRevset | ExactRevset | OptimisticRevset,
+    protected branchName?: string,
+  ) {
     super('HideOperation');
   }
 
   static opName = 'Hide';
 
+  /**
+   * Git mode: delete the branch with `git branch -D <name>`.
+   * Once the branch is deleted, the commit becomes unreachable and
+   * won't appear in `git log --branches`.
+   * If no branch name is available, this is a no-op.
+   */
   getArgs() {
-    return ['hide', '--rev', this.source];
+    if (this.branchName) {
+      return ['branch', '-D', this.branchName];
+    }
+    // No branch to delete — commit is already unreachable or has no branch ref
+    return ['status'];
   }
 
-  private hash() {
+  protected hash() {
     return this.source.type === 'optimistic-revset' ? this.source.fake : this.source.revset;
   }
 
