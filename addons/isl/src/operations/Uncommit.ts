@@ -20,17 +20,20 @@ export class UncommitOperation extends Operation {
    * @param changedFiles the files that are in the commit to be uncommitted. Must be fetched before running, as the CommitInfo object itself does not have file statuses.
    */
   constructor(
-    private originalDotCommit: CommitInfo,
-    private changedFiles: Array<ChangedFile>,
+    protected originalDotCommit: CommitInfo,
+    protected changedFiles: Array<ChangedFile>,
   ) {
     super('UncommitOperation');
   }
 
   static opName = 'Uncommit';
 
+  /**
+   * Git mode: `git reset --soft HEAD~1` moves HEAD back one commit
+   * but keeps all changes staged in the working tree.
+   */
   getArgs() {
-    const args = ['uncommit'];
-    return args;
+    return ['reset', '--soft', 'HEAD~1'];
   }
 
   optimisticDag(dag: Dag): Dag {

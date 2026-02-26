@@ -78,6 +78,7 @@ export type TrackEventName =
   | 'GraphiteDownstackRestackOperation'
   | 'GraphiteCreateOperation'
   | 'GraphiteFoldOperation'
+  | 'GraphitePopOperation'
   | 'GotoOperation'
   | 'GoBackToOldISL'
   | 'GoBackToOldISLOnce'

@@ -344,6 +344,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **`gt fold` for Combine/Fold** — New `GraphiteFoldOperation` extends `FoldOperation` and uses `CommandRunner.Graphite` to run `gt fold --no-interactive`. Folds the current branch into its parent and restacks descendants — the Graphite-native way to combine adjacent branches in a stack. `fold.tsx` dispatches `GraphiteFoldOperation` when `commandRunnerMode === 'graphite'`, falling back to `FoldOperation` (git) otherwise. Git mode `FoldOperation.getArgs()` updated from broken Sapling `fold --exact REVSET` to `git reset --soft <parent-hash>` (collapses fold range into staged changes). `FoldOperation.foldRange` and message fields changed from `private` to `protected` for subclass access. Added `GraphiteFoldOperation` to `TrackEventName`.
 
+- **`gt pop` for Uncommit** — New `GraphitePopOperation` extends `UncommitOperation` and uses `CommandRunner.Graphite` to run `gt pop --no-interactive`. Deletes the current branch but retains working tree changes — the Graphite-native way to uncommit while cleaning up branch metadata. `UncommitButton.tsx` checks `commandRunnerMode` and dispatches `GraphitePopOperation` in graphite mode, falling back to `UncommitOperation` (git) otherwise. Git mode `UncommitOperation.getArgs()` updated from broken Sapling `uncommit` to `git reset --soft HEAD~1`. Constructor fields changed from `private` to `protected` for subclass access. Added `GraphitePopOperation` to `TrackEventName`.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -368,8 +370,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt rename [name]` — Rename a branch and update metadata
 
 1. **Hide → `gt delete`** — `HideOperation` uses Sapling `hide --rev`. Graphite equivalent: `gt delete <branch> --force --no-interactive` deletes the branch, removes Graphite metadata, and restacks children onto the parent. In git mode, `git branch -D <name>` to delete the branch. Replace the "Hide" context menu item with "Delete branch" that dispatches `GraphiteDeleteOperation` in graphite mode. Options: `--close` to also close the associated PR on GitHub, `--upstack` to delete the branch and all its children.
-
-3. **Uncommit → `gt pop`** — `Uncommit.ts` uses Sapling `uncommit`. Graphite equivalent: `gt pop` deletes the current branch but retains working tree changes (effectively "uncommits" while preserving the file state). In git mode, `git reset --soft HEAD~1`. Create `GraphitePopOperation` for graphite mode.
 
 4. **Shelve → `git stash`** — No `gt` equivalent for stashing. `ShelveOperation` uses `shelve --unknown`, `UnshelveOperation` uses `unshelve --keep --name`, `DeleteShelveOperation` uses `shelve --delete`. Convert to `git stash push [-m name] [-- files]`, `git stash pop/apply`, `git stash drop`. The server-side `getShelvedChanges()` also needs to use `git stash list --format=...` to return stash entries. Note: git stash doesn't support named stashes the same way — will need to match by message.
 

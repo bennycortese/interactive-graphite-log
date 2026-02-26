@@ -9,9 +9,12 @@ import {Button} from 'isl-components/Button';
 import {Icon} from 'isl-components/Icon';
 import {DOCUMENTATION_DELAY, Tooltip} from 'isl-components/Tooltip';
 import {useAtomValue} from 'jotai';
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {getChangedFilesForHash} from './ChangedFilesWithFetching';
 import {codeReviewProvider, diffSummary} from './codeReview/CodeReviewInfo';
 import {t, T} from './i18n';
+import {readAtom} from './jotaiUtils';
+import {GraphitePopOperation} from './operations/GraphitePopOperation';
 import {UncommitOperation} from './operations/Uncommit';
 import {useRunOperation} from './operationsState';
 import platform from './platform';
@@ -73,7 +76,12 @@ export function UncommitButton() {
               // In the event of a failure, just guess at it being Modified. This is just for the UI preview.
               status: 'M',
             }));
-          runOperation(new UncommitOperation(headCommit, changedFiles));
+          const runnerMode = readAtom(commandRunnerMode);
+          runOperation(
+            runnerMode === 'graphite'
+              ? new GraphitePopOperation(headCommit, changedFiles)
+              : new UncommitOperation(headCommit, changedFiles),
+          );
         }}
         icon
         data-testid="uncommit-button">
