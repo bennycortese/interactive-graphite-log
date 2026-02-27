@@ -20,11 +20,12 @@ export class PushOperation extends Operation {
     super('PushOperation');
   }
 
+  /**
+   * Git mode: `git push <remote> <branch>`.
+   * Pushes the branch to the remote (defaults to "origin").
+   */
   getArgs() {
-    const args = ['push', '--rev', this.topOfStackRev, '--to', this.toBranchName];
-    if (this.destination) {
-      args.push(this.destination);
-    }
-    return args;
+    const remote = this.destination ?? 'origin';
+    return ['push', remote, this.toBranchName];
   }
 }

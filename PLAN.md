@@ -356,6 +356,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **AddRemove → `git add`** — `AddRemoveOperation.getArgs()` updated from Sapling `addremove` to `git add -A` (all files) or `git add <files>` (specific files). Used in `UncommittedChanges.tsx` for the "Add/Remove" button that stages untracked files and removes missing files. Optimistic uncommitted changes preview preserved.
 
+- **Push → `git push`** — `PushOperation.getArgs()` updated from Sapling `push --rev REVSET --to BRANCH` to `git push <remote> <branch>` (defaults remote to "origin"). Used in `BranchingPrModalContent.tsx` for pushing branches to remote. In graphite mode, `gt submit` already handles pushing — this operation is for the git-only push path.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -378,8 +380,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-8. **PushOperation → `git push`** — Uses Sapling `push --rev REVSET --to BRANCH`. Convert to `git push origin HEAD:BRANCH` or just `git push`. In graphite mode, `gt submit` already handles pushing branches — this may not be needed separately.
 
 9. **AmendTo → `gt absorb`** — `AmendToOperation` uses Sapling `amend --to` (amend staged changes to a non-HEAD commit in the stack). Graphite has a powerful equivalent: `gt absorb --force --no-interactive` automatically distributes staged hunks to the right commits in the current stack. Create `GraphiteAbsorbOperation`. Git fallback: not directly possible without interactive rebase — could disable in git mode.
 
