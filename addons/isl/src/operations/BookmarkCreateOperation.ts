@@ -23,8 +23,11 @@ export class BookmarkCreateOperation extends Operation {
 
   static opName = 'BookmarkCreate';
 
+  /**
+   * Git mode: `git branch <name> <rev>` creates a branch at the given revision.
+   */
   getArgs() {
-    return ['bookmark', this.bookmark, '--rev', this.revset];
+    return ['branch', this.bookmark, this.revset];
   }
 
   optimisticDag(dag: Dag): Dag {

@@ -352,6 +352,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **Graft → `git cherry-pick`** — `GraftOperation.getArgs()` updated from Sapling `graft <revset>` to `git cherry-pick <revset>`. No `gt` equivalent needed — cherry-pick is a git-level operation. Inline progress text updated from "grafting..." to "cherry-picking...". Used in `DownloadCommitsMenu.tsx` for copying public commits onto the current branch.
 
+- **Bookmark operations → `git branch`** — `BookmarkCreateOperation.getArgs()` updated from Sapling `bookmark NAME --rev REV` to `git branch NAME REV`. `BookmarkDeleteOperation.getArgs()` updated from Sapling `bookmark --delete NAME` to `git branch -d NAME`. Both used in `Bookmark.tsx` — create via the "Create Bookmark" dialog, delete via the bookmark context menu. Optimistic DAG previews preserved from the original operations.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -374,8 +376,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-6. **Bookmark operations → `git branch`** — `BookmarkCreateOperation` uses `bookmark NAME --rev REV`. Convert to `git branch NAME REV`. `BookmarkDeleteOperation` uses `bookmark --delete NAME`. Convert to `git branch -d NAME`. In graphite mode, `gt track` could be wired for creating tracked branches, `gt untrack` + `git branch -d` for deletion.
 
 7. **AddRemove → `git add -A`** — `AddRemoveOperation` uses Sapling `addremove`. Git equivalent: `git add -A` (stages all adds/removes).
 

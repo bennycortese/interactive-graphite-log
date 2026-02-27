@@ -19,8 +19,11 @@ export class BookmarkDeleteOperation extends Operation {
 
   static opName = 'BookmarkDelete';
 
+  /**
+   * Git mode: `git branch -d <name>` deletes the branch.
+   */
   getArgs() {
-    return ['bookmark', '--delete', this.bookmark];
+    return ['branch', '-d', this.bookmark];
   }
 
   optimisticDag(dag: Dag): Dag {
