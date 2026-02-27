@@ -350,6 +350,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **Shelve → `git stash`** — Converted all three shelve operations from Sapling CLI to git stash equivalents. No `gt` equivalent exists for stashing. `ShelveOperation.getArgs()` updated from `sl shelve --unknown` to `git stash push --include-untracked` (with optional `-m name` and `-- files` for partial shelves). `UnshelveOperation.getArgs()` updated from `sl unshelve --keep --name` to `git stash apply/pop <stashRef>` (apply when keep=true, pop when keep=false). `DeleteShelveOperation.getArgs()` updated from `sl shelve --delete` to `git stash drop <stashRef>`. Added `stashRef` optional field to `ShelvedChange` type to identify stash entries by their git ref (e.g. `stash@{0}`). Implemented `getShelvedChanges()` on `Repository` using `git stash list --format=%H\t%at\t%s` to enumerate stash entries and `git stash show --name-status` for each entry's changed files. `ServerToClientAPI.ts` updated to call `repo.getShelvedChanges()` instead of returning an empty stub. Optimistic UI previews preserved from the original operations.
 
+- **Graft → `git cherry-pick`** — `GraftOperation.getArgs()` updated from Sapling `graft <revset>` to `git cherry-pick <revset>`. No `gt` equivalent needed — cherry-pick is a git-level operation. Inline progress text updated from "grafting..." to "cherry-picking...". Used in `DownloadCommitsMenu.tsx` for copying public commits onto the current branch.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -372,8 +374,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-5. **Graft → `git cherry-pick`** — `GraftOperation` uses Sapling `graft REVSET`. Direct git equivalent: `git cherry-pick <hash>`. No `gt` equivalent needed — cherry-pick is a git-level operation.
 
 6. **Bookmark operations → `git branch`** — `BookmarkCreateOperation` uses `bookmark NAME --rev REV`. Convert to `git branch NAME REV`. `BookmarkDeleteOperation` uses `bookmark --delete NAME`. Convert to `git branch -d NAME`. In graphite mode, `gt track` could be wired for creating tracked branches, `gt untrack` + `git branch -d` for deletion.
 

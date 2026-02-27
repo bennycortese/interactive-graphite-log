@@ -19,8 +19,11 @@ export class GraftOperation extends Operation {
 
   static opName = 'Graft';
 
+  /**
+   * Git mode: `git cherry-pick <hash>` copies a commit onto HEAD.
+   */
   getArgs() {
-    return ['graft', this.source];
+    return ['cherry-pick', this.source];
   }
 
   private hash() {
@@ -29,7 +32,7 @@ export class GraftOperation extends Operation {
 
   getInitialInlineProgress(): Array<[string, string]> {
     // TODO: successions
-    return [[this.hash(), t('grafting...')]];
+    return [[this.hash(), t('cherry-picking...')]];
   }
 
   // TODO: Optimistic State
