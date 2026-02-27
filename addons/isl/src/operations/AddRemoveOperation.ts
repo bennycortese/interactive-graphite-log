@@ -14,8 +14,8 @@ import type {RepoRelativePath, UncommittedChanges} from '../types';
 import {Operation} from './Operation';
 
 /**
- * `sl addremove` adds all untracked files, and forgets all missing files.
- * If filepaths are passed, only those file paths will be used, like doing a bulk `sl add` or `sl forget`.
+ * Stage all untracked files and remove all missing files.
+ * Git mode: `git add -A` (all files) or `git add <files>` (specific files).
  * If filepaths is empty array, all untracked/missing files will be affected.
  */
 export class AddRemoveOperation extends Operation {
@@ -26,8 +26,11 @@ export class AddRemoveOperation extends Operation {
   static opName = 'AddRemove';
 
   getArgs() {
+    if (this.paths.length === 0) {
+      return ['add', '-A'];
+    }
     return [
-      'addremove',
+      'add',
       ...this.paths.map(path => ({
         type: 'repo-relative-file' as const,
         path,

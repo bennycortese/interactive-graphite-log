@@ -354,6 +354,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **Bookmark operations → `git branch`** — `BookmarkCreateOperation.getArgs()` updated from Sapling `bookmark NAME --rev REV` to `git branch NAME REV`. `BookmarkDeleteOperation.getArgs()` updated from Sapling `bookmark --delete NAME` to `git branch -d NAME`. Both used in `Bookmark.tsx` — create via the "Create Bookmark" dialog, delete via the bookmark context menu. Optimistic DAG previews preserved from the original operations.
 
+- **AddRemove → `git add`** — `AddRemoveOperation.getArgs()` updated from Sapling `addremove` to `git add -A` (all files) or `git add <files>` (specific files). Used in `UncommittedChanges.tsx` for the "Add/Remove" button that stages untracked files and removes missing files. Optimistic uncommitted changes preview preserved.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -376,8 +378,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-7. **AddRemove → `git add -A`** — `AddRemoveOperation` uses Sapling `addremove`. Git equivalent: `git add -A` (stages all adds/removes).
 
 8. **PushOperation → `git push`** — Uses Sapling `push --rev REVSET --to BRANCH`. Convert to `git push origin HEAD:BRANCH` or just `git push`. In graphite mode, `gt submit` already handles pushing branches — this may not be needed separately.
 
