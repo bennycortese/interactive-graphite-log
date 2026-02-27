@@ -7,8 +7,10 @@
 
 import type {CommitInfo} from './types';
 
+import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {readAtom} from './jotaiUtils';
 import {AmendToOperation} from './operations/AmendToOperation';
+import {GraphiteAbsorbOperation} from './operations/GraphiteAbsorbOperation';
 import {uncommittedSelection} from './partialSelection';
 import {dagWithPreviews, uncommittedChangesWithPreviews} from './previews';
 import {latestSuccessorUnlessExplicitlyObsolete} from './successionUtils';
@@ -54,5 +56,10 @@ export function getAmendToOperation(commit: CommitInfo): AmendToOperation {
   const paths = uncommittedChanges
     .filter(change => selection.isFullySelected(change.path))
     .map(change => change.path);
-  return new AmendToOperation(latestSuccessorUnlessExplicitlyObsolete(commit), paths);
+  const revset = latestSuccessorUnlessExplicitlyObsolete(commit);
+  const runnerMode = readAtom(commandRunnerMode);
+  if (runnerMode === 'graphite') {
+    return new GraphiteAbsorbOperation(revset, paths);
+  }
+  return new AmendToOperation(revset, paths);
 }

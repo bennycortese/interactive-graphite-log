@@ -79,6 +79,7 @@ export type TrackEventName =
   | 'GraphiteCreateOperation'
   | 'GraphiteFoldOperation'
   | 'GraphitePopOperation'
+  | 'GraphiteAbsorbOperation'
   | 'GraphiteDeleteOperation'
   | 'GotoOperation'
   | 'GoBackToOldISL'

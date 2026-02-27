@@ -358,6 +358,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **Push → `git push`** — `PushOperation.getArgs()` updated from Sapling `push --rev REVSET --to BRANCH` to `git push <remote> <branch>` (defaults remote to "origin"). Used in `BranchingPrModalContent.tsx` for pushing branches to remote. In graphite mode, `gt submit` already handles pushing — this operation is for the git-only push path.
 
+- **AmendTo → `gt absorb`** — New `GraphiteAbsorbOperation` extends `AmendToOperation` and uses `CommandRunner.Graphite` to run `gt absorb --force --no-interactive`. Automatically distributes staged hunks to the correct commits in the current stack — the Graphite-native equivalent of Sapling's `amend --to`. `operationUtils.tsx:getAmendToOperation()` dispatches `GraphiteAbsorbOperation` in graphite mode, falling back to `AmendToOperation` (Sapling `amend --to`, which won't work in git mode but is guarded by `isAmendToAllowedForCommit`) otherwise. Added `GraphiteAbsorbOperation` to `TrackEventName`.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -380,8 +382,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-9. **AmendTo → `gt absorb`** — `AmendToOperation` uses Sapling `amend --to` (amend staged changes to a non-HEAD commit in the stack). Graphite has a powerful equivalent: `gt absorb --force --no-interactive` automatically distributes staged hunks to the right commits in the current stack. Create `GraphiteAbsorbOperation`. Git fallback: not directly possible without interactive rebase — could disable in git mode.
 
 10. **Conflict handling → `gt continue` / `gt abort`** — `ContinueMergeOperation` uses `git rebase --continue` and `AbortMergeOperation` uses `git rebase --abort`. In graphite mode, should use `gt continue` and `gt abort` instead, since Graphite tracks rebase state and needs its own continue/abort to maintain metadata. Create `GraphiteContinueOperation` and `GraphiteAbortOperation`.
 
