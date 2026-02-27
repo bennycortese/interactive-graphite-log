@@ -78,7 +78,9 @@ import {AddRemoveOperation} from './operations/AddRemoveOperation';
 import {getAmendOperation} from './operations/AmendOperation';
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {getCommitOperation} from './operations/CommitOperation';
+import {GraphiteAbortOperation} from './operations/GraphiteAbortOperation';
 import {getGraphiteCreateOperation} from './operations/GraphiteCreateOperation';
+import {GraphiteContinueOperation} from './operations/GraphiteContinueOperation';
 import {getGraphiteModifyOperation} from './operations/GraphiteModifyOperation';
 import {ContinueOperation} from './operations/ContinueMergeOperation';
 import {DiscardOperation, PartialDiscardOperation} from './operations/DiscardOperation';
@@ -905,7 +907,12 @@ function MergeConflictButtons({
           if (branchMerge) {
             runOperation(branchMerge);
           } else {
-            runOperation(new ContinueOperation());
+            const runnerMode = readAtom(commandRunnerMode);
+            runOperation(
+              runnerMode === 'graphite'
+                ? new GraphiteContinueOperation()
+                : new ContinueOperation(),
+            );
           }
         }}>
         <Icon slot="start" icon={isRunningContinue ? 'loading' : 'debug-continue'} />
@@ -917,7 +924,12 @@ function MergeConflictButtons({
         onClick={() => {
           const partialAbortAvailable = conflicts?.command === 'rebase';
           const isPartialAbort = partialAbortAvailable && readAtom(shouldPartialAbort);
-          runOperation(new AbortMergeOperation(conflicts, isPartialAbort));
+          const runnerMode = readAtom(commandRunnerMode);
+          runOperation(
+            runnerMode === 'graphite'
+              ? new GraphiteAbortOperation(conflicts, isPartialAbort)
+              : new AbortMergeOperation(conflicts, isPartialAbort),
+          );
         }}>
         <Icon slot="start" icon={isRunningAbort ? 'loading' : 'circle-slash'} />
         <T>Abort</T>

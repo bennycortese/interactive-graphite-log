@@ -360,6 +360,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **AmendTo → `gt absorb`** — New `GraphiteAbsorbOperation` extends `AmendToOperation` and uses `CommandRunner.Graphite` to run `gt absorb --force --no-interactive`. Automatically distributes staged hunks to the correct commits in the current stack — the Graphite-native equivalent of Sapling's `amend --to`. `operationUtils.tsx:getAmendToOperation()` dispatches `GraphiteAbsorbOperation` in graphite mode, falling back to `AmendToOperation` (Sapling `amend --to`, which won't work in git mode but is guarded by `isAmendToAllowedForCommit`) otherwise. Added `GraphiteAbsorbOperation` to `TrackEventName`.
 
+- **Conflict handling → `gt continue` / `gt abort`** — New `GraphiteContinueOperation` extends `ContinueOperation` and uses `CommandRunner.Graphite` to run `gt continue --no-interactive`. New `GraphiteAbortOperation` extends `AbortMergeOperation` and uses `CommandRunner.Graphite` to run `gt abort --no-interactive`. Both maintain Graphite's internal metadata during conflict resolution, unlike raw `git rebase --continue/--abort`. `UncommittedChanges.tsx` updated to dispatch graphite variants when `commandRunnerMode === 'graphite'`. Subclasses pass `instanceof` checks used by the UI for button state tracking. Added both to `TrackEventName`.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -382,8 +384,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-10. **Conflict handling → `gt continue` / `gt abort`** — `ContinueMergeOperation` uses `git rebase --continue` and `AbortMergeOperation` uses `git rebase --abort`. In graphite mode, should use `gt continue` and `gt abort` instead, since Graphite tracks rebase state and needs its own continue/abort to maintain metadata. Create `GraphiteContinueOperation` and `GraphiteAbortOperation`.
 
 11. **Other broken operations to remove/stub** — `PullRevOperation` (pull specific rev — not a git/gt concept), `RebaseKeepOperation` (rebase with --keep — Sapling-specific), `RebaseAllDraftCommitsOperation` (uses `draft()` revset — no equivalent), `RunMergeDriversOperation` (uses `resolve --all` — Sapling-specific), `ImportStackOperation` (uses `debugimportstack` — Sapling-only), `CreateEmptyInitialCommitOperation` (niche, low priority). These should be stubbed to no-op or removed from the UI.
 
