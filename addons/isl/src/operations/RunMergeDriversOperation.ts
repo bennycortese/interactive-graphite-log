@@ -15,6 +15,9 @@ export class RunMergeDriversOperation extends Operation {
   }
 
   getArgs() {
-    return ['resolve', '--all'];
+    // In git, staging all files marks conflicts as resolved.
+    // This is the closest equivalent to Sapling's `sl resolve --all`
+    // which runs merge drivers to auto-resolve conflicts.
+    return ['add', '-A'];
   }
 }

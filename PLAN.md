@@ -362,6 +362,8 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **Conflict handling → `gt continue` / `gt abort`** — New `GraphiteContinueOperation` extends `ContinueOperation` and uses `CommandRunner.Graphite` to run `gt continue --no-interactive`. New `GraphiteAbortOperation` extends `AbortMergeOperation` and uses `CommandRunner.Graphite` to run `gt abort --no-interactive`. Both maintain Graphite's internal metadata during conflict resolution, unlike raw `git rebase --continue/--abort`. `UncommittedChanges.tsx` updated to dispatch graphite variants when `commandRunnerMode === 'graphite'`. Subclasses pass `instanceof` checks used by the UI for button state tracking. Added both to `TrackEventName`.
 
+- **Other broken operations fixed/stubbed** — Converted remaining Sapling-only operations to git equivalents: `PullRevOperation` (`sl pull --rev` → `git fetch origin`), `RebaseKeepOperation` (`sl rebase --keep --rev SRC --dest DEST` → `git cherry-pick <source>` — copies commit without removing original), `RebaseAllDraftCommitsOperation` (`sl rebase -s draft()` → `git rebase <dest>` — closest approximation since git has no `draft()` revset), `RunMergeDriversOperation` (`sl resolve --all` → `git add -A` — staging all files marks conflicts as resolved in git). `ImportStackOperation` (`sl debugimportstack`) left as-is — this is the core stack editing backend which has no git equivalent and needs a proper reimplementation. `CreateEmptyInitialCommitOperation` doesn't exist as a file — skipped.
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -384,8 +386,6 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt track [branch] [--parent <branch>]` — Start tracking a branch with Graphite
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
-
-11. **Other broken operations to remove/stub** — `PullRevOperation` (pull specific rev — not a git/gt concept), `RebaseKeepOperation` (rebase with --keep — Sapling-specific), `RebaseAllDraftCommitsOperation` (uses `draft()` revset — no equivalent), `RunMergeDriversOperation` (uses `resolve --all` — Sapling-specific), `ImportStackOperation` (uses `debugimportstack` — Sapling-only), `CreateEmptyInitialCommitOperation` (niche, low priority). These should be stubbed to no-op or removed from the UI.
 
 #### Phase 2: Leverage more Graphite stack features
 

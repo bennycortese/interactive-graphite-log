@@ -23,7 +23,10 @@ export class RebaseKeepOperation extends Operation {
   static opName = 'Rebase (keep)';
 
   getArgs() {
-    return ['rebase', '--keep', '--rev', this.source, '--dest', this.destination];
+    // git cherry-pick copies the source commit onto HEAD without removing the original.
+    // Unlike `sl rebase --keep`, git cherry-pick doesn't support an explicit --dest;
+    // the destination is always HEAD.
+    return ['cherry-pick', this.source];
   }
 
   // TODO: Support optimistic state. Presently not an issue because its use case in "Download Commits"

@@ -17,6 +17,8 @@ export class PullRevOperation extends Operation {
   }
 
   getArgs() {
-    return ['pull', '--rev', this.rev];
+    // git fetch origin fetches all refs from the remote.
+    // Unlike `sl pull --rev`, git fetch doesn't support pulling a single revision.
+    return ['fetch', 'origin'];
   }
 }

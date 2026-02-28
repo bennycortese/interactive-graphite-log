@@ -9,7 +9,6 @@ import type {Dag} from '../previews';
 import type {ExactRevset, OptimisticRevset, SucceedableRevset} from '../types';
 
 import {latestSuccessor} from '../successionUtils';
-import {exactRevset} from '../types';
 import {Operation} from './Operation';
 
 export class RebaseAllDraftCommitsOperation extends Operation {
@@ -23,15 +22,10 @@ export class RebaseAllDraftCommitsOperation extends Operation {
   static opName = 'Rebase all draft commits';
 
   getArgs() {
-    return [
-      'rebase',
-      '-s',
-      exactRevset(
-        this.timeRangeDays == null ? 'draft()' : `draft() & date(-${this.timeRangeDays})`,
-      ),
-      '-d',
-      this.destination,
-    ];
+    // In git, there's no equivalent of Sapling's `draft()` revset.
+    // `git rebase <dest>` rebases the current branch onto the destination,
+    // which is the closest approximation.
+    return ['rebase', this.destination];
   }
 
   optimisticDag(dag: Dag): Dag {
