@@ -97,7 +97,7 @@ function SplitByFilesContent({
   returnResultAndDismiss,
 }: {
   commit: CommitInfo;
-  returnResultAndDismiss: (data: RepoRelativePath[] | undefined) => void;
+  returnResultAndDismiss: (data: RepoRelativePath[]) => void;
 }) {
   const runOperation = useRunOperation();
   const [files, setFiles] = useState<Array<{path: string; status: string}> | null>(null);
@@ -126,7 +126,7 @@ function SplitByFilesContent({
           {error}
         </div>
         <div {...stylex.props(styles.actions)}>
-          <Button onClick={() => returnResultAndDismiss(undefined)}>
+          <Button onClick={() => returnResultAndDismiss([])}>
             <T>Close</T>
           </Button>
         </div>
@@ -194,7 +194,7 @@ function SplitByFilesContent({
         ))}
       </div>
       <div {...stylex.props(styles.actions)}>
-        <Button onClick={() => returnResultAndDismiss(undefined)}>
+        <Button onClick={() => returnResultAndDismiss([])}>
           <T>Cancel</T>
         </Button>
         <Button
