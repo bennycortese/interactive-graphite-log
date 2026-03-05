@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type {CommitInfo} from './types';
+import type {CommitInfo, ExactRevset, OptimisticRevset, SucceedableRevset} from './types';
 
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {readAtom} from './jotaiUtils';
 import {AmendToOperation} from './operations/AmendToOperation';
 import {GraphiteAbsorbOperation} from './operations/GraphiteAbsorbOperation';
+import {GraphiteMoveOperation} from './operations/GraphiteMoveOperation';
+import {RebaseOperation} from './operations/RebaseOperation';
 import {uncommittedSelection} from './partialSelection';
 import {dagWithPreviews, uncommittedChangesWithPreviews} from './previews';
 import {latestSuccessorUnlessExplicitlyObsolete} from './successionUtils';
@@ -47,6 +49,48 @@ export function isAmendToAllowedForCommit(commit: CommitInfo): boolean {
   }
 
   return dag.isAncestor(commit.hash, head.hash);
+}
+
+/**
+ * Extract the Graphite branch name from a commit's local bookmarks.
+ * Returns undefined if the commit has no local branch (not Graphite-tracked).
+ */
+export function getGraphiteBranchName(commit: CommitInfo): string | undefined {
+  return commit.bookmarks[0];
+}
+
+/**
+ * Extract the destination branch name for `gt move --onto`.
+ * Prefers remote bookmark names (stripped of `origin/` prefix) for trunk,
+ * falls back to local branch name.
+ */
+export function getDestBranchName(commit: CommitInfo): string | undefined {
+  if (commit.remoteBookmarks.length > 0) {
+    return commit.remoteBookmarks[0].replace(/^origin\//, '');
+  }
+  return commit.bookmarks[0];
+}
+
+/**
+ * Mode-aware factory for rebase operations.
+ * In graphite mode, uses `gt move` when both source and destination
+ * have Graphite branch names. Falls back to `git rebase` otherwise.
+ */
+export function getRebaseOperation(
+  source: SucceedableRevset | ExactRevset | OptimisticRevset,
+  destination: SucceedableRevset | ExactRevset | OptimisticRevset,
+  sourceCommit?: CommitInfo,
+  destCommit?: CommitInfo,
+): RebaseOperation {
+  const runnerMode = readAtom(commandRunnerMode);
+  if (runnerMode === 'graphite' && sourceCommit && destCommit) {
+    const srcBranch = getGraphiteBranchName(sourceCommit);
+    const dstBranch = getDestBranchName(destCommit);
+    if (srcBranch && dstBranch) {
+      return new GraphiteMoveOperation(source, destination, srcBranch, dstBranch);
+    }
+  }
+  return new RebaseOperation(source, destination);
 }
 
 export function getAmendToOperation(commit: CommitInfo): AmendToOperation {

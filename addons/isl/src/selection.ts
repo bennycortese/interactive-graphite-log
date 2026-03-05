@@ -21,10 +21,10 @@ import {findPublicBaseAncestor} from './getCommitTree';
 import {t} from './i18n';
 import {readAtom, useAtomHas, writeAtom} from './jotaiUtils';
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
+import {getRebaseOperation} from './operationUtils';
 import {BulkRebaseOperation} from './operations/BulkRebaseOperation';
 import {GraphiteDeleteOperation} from './operations/GraphiteDeleteOperation';
 import {HideOperation} from './operations/HideOperation';
-import {RebaseOperation} from './operations/RebaseOperation';
 import {operationBeingPreviewed, useRunOperation} from './operationsState';
 import platform from './platform';
 import {dagWithPreviews} from './previews';
@@ -368,16 +368,16 @@ export function useShortcutToRebaseSelected(): void {
     const baseCommitRevset = exactRevset(baseCommit.hash);
 
     const selectedCommits = readAtom(selectedCommitInfos);
-    const selectedRevsets = selectedCommits
-      .filter(commitInfo => findPublicBaseAncestor(dag, commitInfo.hash)?.hash !== baseCommit.hash)
-      .map(latestSuccessorUnlessExplicitlyObsolete);
+    const filteredCommits = selectedCommits
+      .filter(commitInfo => findPublicBaseAncestor(dag, commitInfo.hash)?.hash !== baseCommit.hash);
+    const selectedRevsets = filteredCommits.map(latestSuccessorUnlessExplicitlyObsolete);
 
     if (selectedRevsets.length === 0) {
       return;
     } else if (selectedRevsets.length === 1) {
       writeAtom(
         operationBeingPreviewed,
-        () => new RebaseOperation(selectedRevsets[0], baseCommitRevset),
+        () => getRebaseOperation(selectedRevsets[0], baseCommitRevset, filteredCommits[0], baseCommit),
       );
     } else {
       if (

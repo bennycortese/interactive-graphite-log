@@ -26,6 +26,7 @@ import {IconStack} from './icons/IconStack';
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
 import {useRunOperation} from './operationsState';
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   import {GraphiteDownstackRestackOperation} from './operations/GraphiteDownstackRestackOperation';
+import {GraphiteMergeOperation} from './operations/GraphiteMergeOperation';
 import {GraphiteRestackOperation} from './operations/GraphiteRestackOperation';
 import {GraphiteUpstackRestackOperation} from './operations/GraphiteUpstackRestackOperation';
 import {useUncommittedSelection} from './partialSelection';
@@ -275,6 +276,31 @@ export function StackActions({hash}: {hash: Hash}): React.ReactElement | null {
         runOperation(new GraphiteDownstackRestackOperation());
       },
     });
+  }
+
+  // Graphite-mode: show "Merge stack" button when the stack has submitted PRs.
+  // Uses `gt merge` to land stacked PRs via Graphite's merge queue.
+  if (runnerMode === 'graphite') {
+    const stackCommits = dag.getBatch(dag.descendants(hash).toHashes().toArray());
+    const hasSubmittedPRs = stackCommits.some(c => c.diffId != null && c.phase === 'draft');
+    if (hasSubmittedPRs) {
+      actions.push(
+        <Tooltip
+          key="gt-merge"
+          placement="bottom"
+          title={t(
+            'Merge PRs from trunk to current branch via Graphite merge queue.',
+          )}>
+          <OperationDisabledButton
+            contextKey={`gt-merge-${hash}`}
+            kind="icon"
+            icon={<Icon icon="git-merge" slot="start" />}
+            runOperation={() => new GraphiteMergeOperation()}>
+            <T>Merge stack</T>
+          </OperationDisabledButton>
+        </Tooltip>,
+      );
+    }
   }
 
   if (showCleanupButton) {

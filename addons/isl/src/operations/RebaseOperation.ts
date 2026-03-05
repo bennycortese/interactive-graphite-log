@@ -17,8 +17,8 @@ import {Operation} from './Operation';
 
 export class RebaseOperation extends Operation {
   constructor(
-    private source: SucceedableRevset | ExactRevset | OptimisticRevset,
-    private destination: SucceedableRevset | ExactRevset | OptimisticRevset,
+    protected source: SucceedableRevset | ExactRevset | OptimisticRevset,
+    protected destination: SucceedableRevset | ExactRevset | OptimisticRevset,
   ) {
     super('RebaseOperation');
   }

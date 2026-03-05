@@ -21,9 +21,9 @@ import {tracker} from './analytics';
 import {findPublicBaseAncestor} from './getCommitTree';
 import {T} from './i18n';
 import {atomFamilyWeak, readAtom} from './jotaiUtils';
+import {getRebaseOperation} from './operationUtils';
 import {BulkRebaseOperation} from './operations/BulkRebaseOperation';
 import {RebaseAllDraftCommitsOperation} from './operations/RebaseAllDraftCommitsOperation';
-import {RebaseOperation} from './operations/RebaseOperation';
 import {useRunOperation} from './operationsState';
 import {dagWithPreviews} from './previews';
 import {RelativeDate} from './relativeDate';
@@ -174,10 +174,12 @@ export function SuggestedRebaseButton({
  * If source is undefined, rebase all draft commits.
  * If source is an Array of revsets, bulk rebase those commits.
  * If source is a single revset, rebase that commit.
+ * If sourceCommit is provided, enables mode-aware dispatch (gt move in graphite mode).
  */
 export function getSuggestedRebaseOperation(
   dest: CommitInfo,
   source: SucceedableRevset | ExactRevset | OptimisticRevset | Array<SucceedableRevset> | undefined,
+  sourceCommit?: CommitInfo,
 ): Operation {
   const destination = dest.remoteBookmarks?.[0] ?? dest.hash;
   const isBulk = source != null && Array.isArray(source);
@@ -193,7 +195,7 @@ export function getSuggestedRebaseOperation(
         )
       : Array.isArray(source)
         ? new BulkRebaseOperation(source, succeedableRevset(destination))
-        : new RebaseOperation(source, succeedableRevset(destination));
+        : getRebaseOperation(source, succeedableRevset(destination), sourceCommit, dest);
 
   return operation;
 }

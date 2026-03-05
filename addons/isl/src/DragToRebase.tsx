@@ -11,7 +11,8 @@ import {Tooltip} from 'isl-components/Tooltip';
 import {useCallback, useEffect, useState} from 'react';
 import {t} from './i18n';
 import {readAtom, writeAtom} from './jotaiUtils';
-import {REBASE_PREVIEW_HASH_PREFIX, RebaseOperation} from './operations/RebaseOperation';
+import {getRebaseOperation} from './operationUtils';
+import {REBASE_PREVIEW_HASH_PREFIX} from './operations/RebaseOperation';
 import {operationBeingPreviewed} from './operationsState';
 import {CommitPreview, dagWithPreviews, uncommittedChangesWithPreviews} from './previews';
 import {latestDag} from './serverAPIState';
@@ -109,9 +110,11 @@ export function DragToRebase({
                 ? succeedableRevset(commit.remoteBookmarks[0])
                 : latestSuccessorUnlessExplicitlyObsolete(commit);
             writeAtom(operationBeingPreviewed, op => {
-              const newRebase = new RebaseOperation(
+              const newRebase = getRebaseOperation(
                 latestSuccessorUnlessExplicitlyObsolete(beingDragged),
                 destination,
+                beingDragged,
+                commit,
               );
               const isEqual = newRebase.equals(op);
               return isEqual ? op : newRebase;

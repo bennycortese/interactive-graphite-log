@@ -61,6 +61,8 @@ import {atomFamilyWeak, localStorageBackedAtom, readAtom, writeAtom} from './jot
 import {CONFLICT_SIDE_LABELS} from './mergeConflicts/consts';
 import {getAmendToOperation, isAmendToAllowedForCommit} from './operationUtils';
 import {commandRunnerMode} from './atoms/CommandRunnerModeState';
+import {showSplitByFilesDialog} from './SplitByFilesDialog';
+import {GraphiteSquashOperation} from './operations/GraphiteSquashOperation';
 import {GotoOperation} from './operations/GotoOperation';
 import {GraphiteDeleteOperation} from './operations/GraphiteDeleteOperation';
 import {HideOperation} from './operations/HideOperation';
@@ -327,6 +329,7 @@ export const Commit = memo(
                 const operation = getSuggestedRebaseOperation(
                   dest,
                   latestSuccessorUnlessExplicitlyObsolete(commit),
+                  commit,
                 );
 
                 const shouldProceed = await runWarningChecks([
@@ -361,6 +364,38 @@ export const Commit = memo(
             onClick: hasUncommittedChanges ? () => null : handleSplit,
             loggingLabel: 'Split',
           });
+        }
+        {
+          const runnerMode = readAtom(commandRunnerMode);
+          if (runnerMode === 'graphite' && !isObsoleted && commit.bookmarks.length > 0) {
+            items.push({
+              label: hasUncommittedChanges ? (
+                <span className="context-menu-disabled-option">
+                  <T>Split by files (Graphite)...</T>
+                  <Subtle>
+                    <T> (disabled due to uncommitted changes)</T>
+                  </Subtle>
+                </span>
+              ) : (
+                <T>Split by files (Graphite)...</T>
+              ),
+              onClick: hasUncommittedChanges
+                ? () => null
+                : async () => {
+                    await showSplitByFilesDialog(commit);
+                  },
+              loggingLabel: 'GraphiteSplit',
+            });
+          }
+          if (runnerMode === 'graphite' && !isPublic && commit.isDot && commit.bookmarks.length > 0) {
+            items.push({
+              label: <T>Squash branch</T>,
+              onClick: () => {
+                runOperation(new GraphiteSquashOperation());
+              },
+              loggingLabel: 'GraphiteSquash',
+            });
+          }
         }
         items.push({
           label: <T>Create Bookmark...</T>,
