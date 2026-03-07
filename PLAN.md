@@ -364,6 +364,14 @@ The codebase compiles and all Sapling command references have been replaced with
 
 - **Other broken operations fixed/stubbed** — Converted remaining Sapling-only operations to git equivalents: `PullRevOperation` (`sl pull --rev` → `git fetch origin`), `RebaseKeepOperation` (`sl rebase --keep --rev SRC --dest DEST` → `git cherry-pick <source>` — copies commit without removing original), `RebaseAllDraftCommitsOperation` (`sl rebase -s draft()` → `git rebase <dest>` — closest approximation since git has no `draft()` revset), `RunMergeDriversOperation` (`sl resolve --all` → `git add -A` — staging all files marks conflicts as resolved in git). `ImportStackOperation` (`sl debugimportstack`) left as-is — this is the core stack editing backend which has no git equivalent and needs a proper reimplementation. `CreateEmptyInitialCommitOperation` doesn't exist as a file — skipped.
 
+- **`gt move` for Rebase** — New `GraphiteMoveOperation` extends `RebaseOperation` and uses `CommandRunner.Graphite` to run `gt move --onto <dest-branch> --source <src-branch> --no-interactive`. Rebases a branch and automatically restacks all descendants while maintaining Graphite metadata — superior to raw `git rebase`. `RebaseOperation.source` and `.destination` changed from `private` to `protected` for subclass access. Added `getRebaseOperation()` factory and helpers `getGraphiteBranchName()` / `getDestBranchName()` to `operationUtils.tsx` for mode-aware dispatch. Wired at 4 dispatch points: `DragToRebase.tsx` (drag-and-drop), `SuggestedRebase.tsx` (`getSuggestedRebaseOperation` with new `sourceCommit` param), `Commit.tsx` (context menu "Rebase onto"), `selection.ts` (keyboard shortcut). Falls back to git `RebaseOperation` when commits lack branch names or in git mode. `StackEditConfirmButtons.tsx` and `GotoTimeMenu.tsx` kept as git-only (no branch mapping in those contexts).
+
+- **`gt split --by-file` for Split** — New `GraphiteSplitOperation` runs `gt split --by-file <paths> --no-interactive` to split specified files from the current branch into a new child branch. New `SplitByFilesDialog.tsx` provides a file picker modal (using `showModal` with `type: 'custom'`) that fetches changed files via `getChangedFilesForHash`, shows checkboxes for each file (with status icons), and dispatches the operation on confirm. Added as "Split by files (Graphite)..." context menu item in `Commit.tsx` (graphite mode only, requires branch name, disabled with uncommitted changes).
+
+- **`gt squash` for multi-commit branches** — New `GraphiteSquashOperation` runs `gt squash --no-edit --no-interactive` to consolidate all commits in the current Graphite branch into one and restack descendants. Added as "Squash branch" context menu item in `Commit.tsx` (graphite mode only, HEAD commit only, requires branch name).
+
+- **`gt merge` for landing PRs** — New `GraphiteMergeOperation` runs `gt merge --no-interactive` to land stacked PRs via Graphite's merge queue. Added as "Merge stack" button in `StackActions.tsx` that appears in graphite mode when the stack has submitted PRs (commits with `diffId`).
+
 ### Planned (priority order)
 
 #### Phase 1: Fix broken Sapling operations (high priority — these crash if triggered)
@@ -387,15 +395,12 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 - `gt untrack [branch]` — Stop tracking a branch
 - `gt rename [name]` — Rename a branch and update metadata
 
-#### Phase 2: Leverage more Graphite stack features
+#### Phase 2: Leverage more Graphite stack features — DONE
 
-12. **`gt move` for Rebase** — `RebaseOperation` uses `git rebase --onto`. Graphite equivalent: `gt move --onto <branch> --source <branch> --no-interactive` rebases the branch and automatically restacks all descendants. Create `GraphiteMoveOperation` that dispatches in graphite mode. This is better than raw `git rebase` because it maintains Graphite metadata and handles descendant restacking.
-
-13. **`gt split` for Split** — The stack edit UI exists (`SplitStackEditPanel.tsx`) but split operations use Sapling internals. Graphite supports `gt split --by-file <pathspec>` non-interactively (the `--by-commit` and `--by-hunk` modes require interactive input). Wire `gt split --by-file` as a non-interactive split option in graphite mode.
-
-14. **`gt squash` for multi-commit branches** — `gt squash [-m msg] [--no-edit] --no-interactive` squashes all commits in the current branch into one and restacks. Useful when a branch has accumulated fixup commits. Could add as a context menu action on branches with multiple commits.
-
-15. **`gt merge` for landing PRs** — `gt merge` merges all PRs from trunk to the current branch via Graphite's merge queue. This is the Graphite-native way to land stacked PRs. Add a "Merge stack" button that runs `gt merge --no-interactive`. Supports `--dry-run` for previewing. This replaces the need for raw GitHub `mergePullRequest` API calls.
+12. ~~**`gt move` for Rebase**~~ — Done. See "Already done" above.
+13. ~~**`gt split` for Split**~~ — Done. See "Already done" above.
+14. ~~**`gt squash` for multi-commit branches**~~ — Done. See "Already done" above.
+15. ~~**`gt merge` for landing PRs**~~ — Done. See "Already done" above.
 
 #### Phase 3: Improve code review integration
 
