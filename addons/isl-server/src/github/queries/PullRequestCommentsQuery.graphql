@@ -22,6 +22,7 @@ query PullRequestCommentsQuery($url: URI!, $numToFetch: Int!) {
   resource(url: $url) {
     __typename
     ... on PullRequest {
+      id
       comments(first: $numToFetch) {
         totalCount
         nodes {

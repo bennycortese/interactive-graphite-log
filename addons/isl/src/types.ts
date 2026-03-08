@@ -976,6 +976,7 @@ export type ClientToServerMessage =
   | {type: 'fetchCommitCloudState'}
   | {type: 'fetchDiffSummaries'; diffIds?: Array<DiffId>}
   | {type: 'fetchDiffComments'; diffId: DiffId}
+  | {type: 'addDiffComment'; diffId: DiffId; body: string}
   | {type: 'fetchLandInfo'; topOfStack: DiffId}
   | {type: 'fetchAndSetStables'; additionalStables: Array<string>}
   | {type: 'fetchStableLocationAutocompleteOptions'}
@@ -1134,6 +1135,7 @@ export type ServerToClientMessage =
   | {type: 'fetchedAvatars'; avatars: Map<string, string>; authors: Array<string>}
   | {type: 'fetchedDiffSummaries'; summaries: Result<Map<DiffId, DiffSummary>>}
   | {type: 'fetchedDiffComments'; diffId: DiffId; comments: Result<Array<DiffComment>>}
+  | {type: 'addedDiffComment'; diffId: DiffId; error?: string}
   | {type: 'fetchedLandInfo'; topOfStack: DiffId; landInfo: Result<LandInfo>}
   | {type: 'confirmedLand'; result: Result<undefined>}
   | {type: 'fetchedCommitCloudState'; state: Result<CommitCloudSyncState>}

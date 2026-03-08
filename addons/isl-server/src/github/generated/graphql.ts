@@ -29441,6 +29441,14 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
+export type AddCommentMutationVariables = Exact<{
+  subjectId: Scalars['ID'];
+  body: Scalars['String'];
+}>;
+
+
+export type AddCommentMutationData = { __typename?: 'Mutation', addComment?: { __typename?: 'AddCommentPayload', commentEdge?: { __typename?: 'IssueCommentEdge', node?: { __typename?: 'IssueComment', id: string } | null } | null } | null };
+
 export type MergeQueueSupportQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -29500,7 +29508,7 @@ export type PullRequestCommentsQueryVariables = Exact<{
 }>;
 
 
-export type PullRequestCommentsQueryData = { __typename?: 'Query', resource?: { __typename: 'Bot' } | { __typename: 'CheckRun' } | { __typename: 'ClosedEvent' } | { __typename: 'Commit' } | { __typename: 'ConvertToDraftEvent' } | { __typename: 'CrossReferencedEvent' } | { __typename: 'Gist' } | { __typename: 'Issue' } | { __typename: 'Mannequin' } | { __typename: 'MergedEvent' } | { __typename: 'Milestone' } | { __typename: 'Organization' } | { __typename: 'PullRequest', comments: { __typename?: 'IssueCommentConnection', totalCount: number, nodes?: Array<{ __typename?: 'IssueComment', bodyHTML: string, createdAt: string, author?: { __typename?: 'Bot', login: string, avatarUrl: string } | { __typename?: 'EnterpriseUserAccount', login: string, avatarUrl: string } | { __typename?: 'Mannequin', login: string, avatarUrl: string } | { __typename?: 'Organization', login: string, avatarUrl: string } | { __typename?: 'User', login: string, avatarUrl: string } | null, reactions: { __typename?: 'ReactionConnection', nodes?: Array<{ __typename?: 'Reaction', content: ReactionContent, user?: { __typename?: 'User', login: string } | null } | null> | null } } | null> | null }, reviews?: { __typename?: 'PullRequestReviewConnection', nodes?: Array<{ __typename?: 'PullRequestReview', comments: { __typename?: 'PullRequestReviewCommentConnection', nodes?: Array<{ __typename?: 'PullRequestReviewComment', line?: number | null, path: string, bodyHTML: string, createdAt: string, author?: { __typename?: 'Bot', login: string, avatarUrl: string } | { __typename?: 'EnterpriseUserAccount', login: string, avatarUrl: string } | { __typename?: 'Mannequin', login: string, avatarUrl: string } | { __typename?: 'Organization', login: string, avatarUrl: string } | { __typename?: 'User', login: string, avatarUrl: string } | null, reactions: { __typename?: 'ReactionConnection', nodes?: Array<{ __typename?: 'Reaction', content: ReactionContent, user?: { __typename?: 'User', login: string } | null } | null> | null } } | null> | null } } | null> | null } | null } | { __typename: 'PullRequestCommit' } | { __typename: 'ReadyForReviewEvent' } | { __typename: 'Release' } | { __typename: 'Repository' } | { __typename: 'RepositoryTopic' } | { __typename: 'ReviewDismissedEvent' } | { __typename: 'TeamDiscussion' } | { __typename: 'TeamDiscussionComment' } | { __typename: 'User' } | { __typename: 'Workflow' } | { __typename: 'WorkflowRun' } | { __typename: 'WorkflowRunFile' } | null };
+export type PullRequestCommentsQueryData = { __typename?: 'Query', resource?: { __typename: 'Bot' } | { __typename: 'CheckRun' } | { __typename: 'ClosedEvent' } | { __typename: 'Commit' } | { __typename: 'ConvertToDraftEvent' } | { __typename: 'CrossReferencedEvent' } | { __typename: 'Gist' } | { __typename: 'Issue' } | { __typename: 'Mannequin' } | { __typename: 'MergedEvent' } | { __typename: 'Milestone' } | { __typename: 'Organization' } | { __typename: 'PullRequest', id: string, comments: { __typename?: 'IssueCommentConnection', totalCount: number, nodes?: Array<{ __typename?: 'IssueComment', bodyHTML: string, createdAt: string, author?: { __typename?: 'Bot', login: string, avatarUrl: string } | { __typename?: 'EnterpriseUserAccount', login: string, avatarUrl: string } | { __typename?: 'Mannequin', login: string, avatarUrl: string } | { __typename?: 'Organization', login: string, avatarUrl: string } | { __typename?: 'User', login: string, avatarUrl: string } | null, reactions: { __typename?: 'ReactionConnection', nodes?: Array<{ __typename?: 'Reaction', content: ReactionContent, user?: { __typename?: 'User', login: string } | null } | null> | null } } | null> | null }, reviews?: { __typename?: 'PullRequestReviewConnection', nodes?: Array<{ __typename?: 'PullRequestReview', comments: { __typename?: 'PullRequestReviewCommentConnection', nodes?: Array<{ __typename?: 'PullRequestReviewComment', line?: number | null, path: string, bodyHTML: string, createdAt: string, author?: { __typename?: 'Bot', login: string, avatarUrl: string } | { __typename?: 'EnterpriseUserAccount', login: string, avatarUrl: string } | { __typename?: 'Mannequin', login: string, avatarUrl: string } | { __typename?: 'Organization', login: string, avatarUrl: string } | { __typename?: 'User', login: string, avatarUrl: string } | null, reactions: { __typename?: 'ReactionConnection', nodes?: Array<{ __typename?: 'Reaction', content: ReactionContent, user?: { __typename?: 'User', login: string } | null } | null> | null } } | null> | null } } | null> | null } | null } | { __typename: 'PullRequestCommit' } | { __typename: 'ReadyForReviewEvent' } | { __typename: 'Release' } | { __typename: 'Repository' } | { __typename: 'RepositoryTopic' } | { __typename: 'ReviewDismissedEvent' } | { __typename: 'TeamDiscussion' } | { __typename: 'TeamDiscussionComment' } | { __typename: 'User' } | { __typename: 'Workflow' } | { __typename: 'WorkflowRun' } | { __typename: 'WorkflowRunFile' } | null };
 
 export type YourPullRequestsQueryVariables = Exact<{
   searchQuery: Scalars['String'];
@@ -29540,6 +29548,17 @@ export const ReactionParts = `
   }
 }
     `;
+export const AddCommentMutation = `
+    mutation AddCommentMutation($subjectId: ID!, $body: String!) {
+  addComment(input: {subjectId: $subjectId, body: $body}) {
+    commentEdge {
+      node {
+        id
+      }
+    }
+  }
+}
+    `;
 export const MergeQueueSupportQuery = `
     query MergeQueueSupportQuery {
   __type(name: "MergeQueueEntry") {
@@ -29552,6 +29571,7 @@ export const PullRequestCommentsQuery = `
   resource(url: $url) {
     __typename
     ... on PullRequest {
+      id
       comments(first: $numToFetch) {
         totalCount
         nodes {

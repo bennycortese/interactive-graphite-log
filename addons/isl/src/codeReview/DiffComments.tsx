@@ -9,12 +9,14 @@ import type {ParsedDiff} from 'shared/patch/types';
 import type {DiffComment, DiffCommentReaction, DiffId} from '../types';
 
 import * as stylex from '@stylexjs/stylex';
+import {Button} from 'isl-components/Button';
 import {ErrorNotice} from 'isl-components/ErrorNotice';
 import {Icon} from 'isl-components/Icon';
 import {Subtle} from 'isl-components/Subtle';
+import {TextArea} from 'isl-components/TextArea';
 import {Tooltip} from 'isl-components/Tooltip';
 import {useAtom, useAtomValue} from 'jotai';
-import {useEffect} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {ComparisonType} from 'shared/Comparison';
 import {group} from 'shared/utils';
 import {colors, font, radius, spacing} from '../../../components/theme/tokens.stylex';
@@ -25,6 +27,7 @@ import {Link} from '../Link';
 import {T, t} from '../i18n';
 import platform from '../platform';
 import {RelativeDate} from '../relativeDate';
+import serverAPI from '../ClientToServerAPI';
 import {layout} from '../stylexUtils';
 import {themeState} from '../theme';
 import {diffCommentData} from './codeReviewAtoms';
@@ -74,6 +77,21 @@ const styles = stylex.create({
   },
   diffView: {
     marginBlock: spacing.pad,
+  },
+  commentInputContainer: {
+    width: '100%',
+    borderTop: '1px solid var(--dropdown-border)',
+    paddingTop: spacing.pad,
+    marginTop: spacing.pad,
+    gap: spacing.half,
+  },
+  commentTextArea: {
+    minHeight: '60px',
+    fontSize: font.small,
+  },
+  commentInputActions: {
+    justifyContent: 'flex-end',
+    gap: spacing.half,
   },
 });
 
@@ -192,6 +210,57 @@ function Reactions({reactions}: {reactions: Array<DiffCommentReaction>}) {
   );
 }
 
+function CommentInput({diffId, onCommentAdded}: {diffId: DiffId; onCommentAdded: () => void}) {
+  const [body, setBody] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = useCallback(async () => {
+    const trimmed = body.trim();
+    if (!trimmed || isSubmitting) {
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    serverAPI.postMessage({type: 'addDiffComment', diffId, body: trimmed});
+    const result = await serverAPI.nextMessageMatching(
+      'addedDiffComment',
+      msg => msg.diffId === diffId,
+    );
+    setIsSubmitting(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setBody('');
+      onCommentAdded();
+    }
+  }, [body, isSubmitting, diffId, onCommentAdded]);
+
+  return (
+    <Column xstyle={styles.commentInputContainer}>
+      {error != null && <ErrorNotice title={t('Failed to post comment')} error={new Error(error)} />}
+      <TextArea
+        xstyle={styles.commentTextArea}
+        placeholder={t('Write a comment...')}
+        value={body}
+        onChange={e => setBody(e.target.value)}
+        disabled={isSubmitting}
+        resize="vertical"
+        onKeyDown={e => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            handleSubmit();
+          }
+        }}
+      />
+      <Row xstyle={styles.commentInputActions}>
+        <Button disabled={isSubmitting || !body.trim()} onClick={handleSubmit}>
+          {isSubmitting ? <Icon icon="loading" /> : <T>Comment</T>}
+        </Button>
+      </Row>
+    </Column>
+  );
+}
+
 export default function DiffCommentsDetails({diffId}: {diffId: DiffId}) {
   const [comments, refresh] = useAtom(diffCommentData(diffId));
   useEffect(() => {
@@ -218,6 +287,7 @@ export default function DiffCommentsDetails({diffId}: {diffId: DiffId}) {
       {comments.data.map((comment, i) => (
         <Comment key={i} comment={comment} isTopLevel />
       ))}
+      <CommentInput diffId={diffId} onCommentAdded={refresh} />
     </div>
   );
 }

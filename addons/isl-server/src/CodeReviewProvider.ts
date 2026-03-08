@@ -77,6 +77,9 @@ export interface CodeReviewProvider {
   /** Convert usernames/emails to avatar URIs */
   fetchComments?(diffId: DiffId): Promise<Array<DiffComment>>;
 
+  /** Add a top-level comment to a diff/PR */
+  addComment?(diffId: DiffId, body: string): Promise<void>;
+
   renderMarkup?: (markup: string) => Promise<string>;
 
   fetchLandInfo?(topOfStack: DiffId): Promise<LandInfo>;

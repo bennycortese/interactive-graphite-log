@@ -849,6 +849,21 @@ export default class ServerToClientAPI {
           });
         break;
       }
+      case 'addDiffComment': {
+        repo.codeReviewProvider
+          ?.addComment?.(data.diffId, data.body)
+          ?.then(() => {
+            this.postMessage({type: 'addedDiffComment', diffId: data.diffId});
+          })
+          .catch(error => {
+            this.postMessage({
+              type: 'addedDiffComment',
+              diffId: data.diffId,
+              error: String(error),
+            });
+          });
+        break;
+      }
       case 'renderMarkup': {
         repo.codeReviewProvider
           ?.renderMarkup?.(data.markup)

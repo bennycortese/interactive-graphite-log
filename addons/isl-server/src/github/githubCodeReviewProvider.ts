@@ -17,6 +17,8 @@ import type {
 import type {CodeReviewProvider} from '../CodeReviewProvider';
 import type {Logger} from '../logger';
 import type {
+  AddCommentMutationData,
+  AddCommentMutationVariables,
   MergeQueueSupportQueryData,
   MergeQueueSupportQueryVariables,
   PullRequestCommentsQueryData,
@@ -34,6 +36,7 @@ import {TypedEventEmitter} from 'shared/TypedEventEmitter';
 import {debounce} from 'shared/debounce';
 import {notEmpty} from 'shared/utils';
 import {
+  AddCommentMutation,
   MergeQueueSupportQuery,
   PullRequestCommentsQuery,
   PullRequestState,
@@ -73,6 +76,7 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
   private diffSummaries = new TypedEventEmitter<'data', Map<DiffId, GitHubDiffSummary>>();
   private latestSummaries: Map<DiffId, GitHubDiffSummary> | undefined;
   private hasMergeQueueSupport: Promise<boolean> | null = null;
+  private prNodeIds = new Map<DiffId, string>();
 
   onChangeDiffSummaries(
     callback: (result: Result<Map<DiffId, GitHubDiffSummary>>) => unknown,
@@ -208,6 +212,10 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
       | (PullRequestCommentsQueryData['resource'] & {__typename: 'PullRequest'})
       | undefined;
 
+    if (pr?.id) {
+      this.prNodeIds.set(diffId, pr.id);
+    }
+
     const comments = pr?.comments.nodes ?? [];
 
     const inline =
@@ -238,6 +246,22 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
         };
       }) ?? []
     );
+  }
+
+  public async addComment(diffId: string, body: string): Promise<void> {
+    let prNodeId = this.prNodeIds.get(diffId);
+    if (!prNodeId) {
+      await this.fetchComments(diffId);
+      prNodeId = this.prNodeIds.get(diffId);
+    }
+    if (!prNodeId) {
+      throw new Error(`Could not find PR node ID for #${diffId}`);
+    }
+    this.logger.info(`adding comment to github PR ${diffId}`);
+    await this.query<AddCommentMutationData, AddCommentMutationVariables>(AddCommentMutation, {
+      subjectId: prNodeId,
+      body,
+    });
   }
 
   private query<D, V>(query: string, variables: V, timeoutMs?: number): Promise<D | undefined> {
