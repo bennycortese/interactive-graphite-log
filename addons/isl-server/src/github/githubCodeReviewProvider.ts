@@ -26,6 +26,8 @@ import type {
   PullRequestReviewComment,
   PullRequestReviewDecision,
   ReactionContent,
+  UpdatePullRequestMutationData,
+  UpdatePullRequestMutationVariables,
   YourPullRequestsQueryData,
   YourPullRequestsQueryVariables,
   YourPullRequestsWithoutMergeQueueQueryData,
@@ -41,6 +43,7 @@ import {
   PullRequestCommentsQuery,
   PullRequestState,
   StatusState,
+  UpdatePullRequestMutation,
   YourPullRequestsQuery,
   YourPullRequestsWithoutMergeQueueQuery,
 } from './generated/graphql';
@@ -248,7 +251,7 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
     );
   }
 
-  public async addComment(diffId: string, body: string): Promise<void> {
+  private async getPrNodeId(diffId: string): Promise<string> {
     let prNodeId = this.prNodeIds.get(diffId);
     if (!prNodeId) {
       await this.fetchComments(diffId);
@@ -257,11 +260,33 @@ export class GitHubCodeReviewProvider implements CodeReviewProvider {
     if (!prNodeId) {
       throw new Error(`Could not find PR node ID for #${diffId}`);
     }
+    return prNodeId;
+  }
+
+  public async addComment(diffId: string, body: string): Promise<void> {
+    const prNodeId = await this.getPrNodeId(diffId);
     this.logger.info(`adding comment to github PR ${diffId}`);
     await this.query<AddCommentMutationData, AddCommentMutationVariables>(AddCommentMutation, {
       subjectId: prNodeId,
       body,
     });
+  }
+
+  public async updateDiffMessage(
+    diffId: string,
+    newTitle: string,
+    newDescription: string,
+  ): Promise<void> {
+    const prNodeId = await this.getPrNodeId(diffId);
+    this.logger.info(`updating PR title/description for github PR ${diffId}`);
+    await this.query<UpdatePullRequestMutationData, UpdatePullRequestMutationVariables>(
+      UpdatePullRequestMutation,
+      {
+        pullRequestId: prNodeId,
+        title: newTitle,
+        body: newDescription,
+      },
+    );
   }
 
   private query<D, V>(query: string, variables: V, timeoutMs?: number): Promise<D | undefined> {

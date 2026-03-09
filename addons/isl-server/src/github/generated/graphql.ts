@@ -29449,6 +29449,15 @@ export type AddCommentMutationVariables = Exact<{
 
 export type AddCommentMutationData = { __typename?: 'Mutation', addComment?: { __typename?: 'AddCommentPayload', commentEdge?: { __typename?: 'IssueCommentEdge', node?: { __typename?: 'IssueComment', id: string } | null } | null } | null };
 
+export type UpdatePullRequestMutationVariables = Exact<{
+  pullRequestId: Scalars['ID'];
+  title?: InputMaybe<Scalars['String']>;
+  body?: InputMaybe<Scalars['String']>;
+}>;
+
+
+export type UpdatePullRequestMutationData = { __typename?: 'Mutation', updatePullRequest?: { __typename?: 'UpdatePullRequestPayload', pullRequest?: { __typename?: 'PullRequest', id: string } | null } | null };
+
 export type MergeQueueSupportQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -29555,6 +29564,17 @@ export const AddCommentMutation = `
       node {
         id
       }
+    }
+  }
+}
+    `;
+export const UpdatePullRequestMutation = `
+    mutation UpdatePullRequestMutation($pullRequestId: ID!, $title: String, $body: String) {
+  updatePullRequest(
+    input: {pullRequestId: $pullRequestId, title: $title, body: $body}
+  ) {
+    pullRequest {
+      id
     }
   }
 }

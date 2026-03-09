@@ -159,7 +159,7 @@ export class GithubUICodeReviewProvider implements UICodeReviewProvider {
     return branchName;
   }
 
-  enableMessageSyncing = false;
+  enableMessageSyncing = true;
 
   supportsSuggestedReviewers = false;
 
