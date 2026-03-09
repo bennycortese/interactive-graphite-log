@@ -28,6 +28,7 @@ import {useRunOperation} from './operationsState';
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   import {GraphiteDownstackRestackOperation} from './operations/GraphiteDownstackRestackOperation';
 import {GraphiteMergeOperation} from './operations/GraphiteMergeOperation';
 import {GraphiteRestackOperation} from './operations/GraphiteRestackOperation';
+import {GraphiteUndoOperation} from './operations/GraphiteUndoOperation';
 import {GraphiteUpstackRestackOperation} from './operations/GraphiteUpstackRestackOperation';
 import {useUncommittedSelection} from './partialSelection';
 import {dagWithPreviews} from './previews';
@@ -274,6 +275,21 @@ export function StackActions({hash}: {hash: Hash}): React.ReactElement | null {
       ),
       onClick: () => {
         runOperation(new GraphiteDownstackRestackOperation());
+      },
+    });
+  }
+
+  // Graphite-mode: show "Undo last" option to undo the most recent Graphite mutation.
+  if (runnerMode === 'graphite') {
+    moreActions.push({
+      label: (
+        <Row>
+          <Icon icon="discard" slot="start" />
+          <T>Undo last Graphite operation</T>
+        </Row>
+      ),
+      onClick: () => {
+        runOperation(new GraphiteUndoOperation());
       },
     });
   }

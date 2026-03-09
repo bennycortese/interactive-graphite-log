@@ -87,6 +87,7 @@ export type TrackEventName =
   | 'GraphiteSplitOperation'
   | 'GraphiteSquashOperation'
   | 'GraphiteMergeOperation'
+  | 'GraphiteUndoOperation'
   | 'GotoOperation'
   | 'GoBackToOldISL'
   | 'GoBackToOldISLOnce'

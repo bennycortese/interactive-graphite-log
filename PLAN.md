@@ -408,7 +408,7 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 
 17. ~~**Commit message ↔ PR description sync**~~ — Done. Set `enableMessageSyncing = true` in `GithubUICodeReviewProvider`. Implemented `updateDiffMessage()` on `GitHubCodeReviewProvider` using the `updatePullRequest` GraphQL mutation (new `UpdatePullRequestMutation.graphql` in `isl-server/src/github/mutations/`). Reuses `getPrNodeId()` helper (shared with `addComment`) to resolve the PR's node ID. The existing `CommitInfoView.tsx` message syncing UI is fully wired — when amending a commit message, the user is prompted to sync the change to the PR title/description on GitHub.
 
-18. **`gt undo` integration** — `gt undo --force --no-interactive` undoes the most recent Graphite mutation. Wire as an "Undo" button in the UI that appears after Graphite operations complete. Useful for recovering from accidental folds, deletes, or moves.
+18. ~~**`gt undo` integration**~~ — Done. New `GraphiteUndoOperation` in `operations/GraphiteUndoOperation.ts` runs `gt undo --force --no-interactive` via `CommandRunner.Graphite`. Added as "Undo last Graphite operation" context menu item in `StackActions.tsx` (via the `moreActions` overflow menu, graphite mode only). Added `GraphiteUndoOperation` to `TrackEventName`. Useful for recovering from accidental folds, deletes, moves, or other Graphite stack operations.
 
 #### Phase 4: UX polish
 
