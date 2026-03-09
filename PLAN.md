@@ -412,7 +412,7 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 
 #### Phase 4: UX polish
 
-19. **Trunk branch configuration** — Currently hardcoded to detect `origin/main` as the public base. `gt` already stores its trunk config (set via `gt init`). Read from `gt trunk` output or the Graphite config file to detect the trunk branch automatically. Add a fallback UI setting for non-Graphite repos.
+19. ~~**Trunk branch configuration**~~ — Done. Added `trunkBranch?: string` field to `ValidatedRepoInfo` type. New `detectTrunkBranch()` static method on `Repository` detects the trunk branch via a 3-tier fallback: (1) Read `.git/.graphite_repo_config` JSON file for the `trunk` field (fastest, no process spawn), (2) `git symbolic-ref --short refs/remotes/origin/HEAD` to read git's default remote branch, (3) check if `origin/main` or `origin/master` ref exists. Updated `fetchSmartlogCommits()` to use `git log --format=%H origin/<trunk>` instead of `--remotes` when trunk is known, so only commits reachable from the trunk branch are marked as "public" (more accurate for stacked branch workflows where feature branches may also be pushed).
 
 20. **Stack grouping in UI** — `gt state` gives us parent-child branch relationships. Use this to visually group stacked branches in the commit graph (e.g., indentation, colored connectors, or collapsible stack sections).
 

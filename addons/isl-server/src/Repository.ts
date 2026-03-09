@@ -493,6 +493,9 @@ export class Repository {
       }
     }
 
+    // Detect trunk branch name
+    const trunkBranch = await Repository.detectTrunkBranch(ctx, dotdir, logger);
+
     const result: RepoInfo = {
       type: 'success',
       command: cmd,
@@ -502,9 +505,77 @@ export class Repository {
       codeReviewSystem,
       pullRequestDomain,
       preferredSubmitCommand: 'submit' as ValidatedRepoInfo['preferredSubmitCommand'],
+      trunkBranch,
     };
     logger.info('repo info: ', result);
     return result;
+  }
+
+  /**
+   * Detect the trunk branch name for this repository.
+   * Tries, in order:
+   * 1. Graphite config file (.git/.graphite_repo_config) — fastest, no process spawn
+   * 2. Git default remote branch (git symbolic-ref refs/remotes/origin/HEAD)
+   * 3. Check if origin/main or origin/master exist
+   * Returns undefined if no trunk can be detected.
+   */
+  private static async detectTrunkBranch(
+    ctx: RepositoryContext,
+    dotdir: string,
+    logger: {info: (...args: unknown[]) => void},
+  ): Promise<string | undefined> {
+    // 1. Try Graphite repo config file
+    try {
+      const configPath = path.join(dotdir, '.graphite_repo_config');
+      const configContent = await fs.promises.readFile(configPath, 'utf-8');
+      const config = JSON.parse(configContent);
+      if (typeof config.trunk === 'string' && config.trunk.length > 0) {
+        logger.info(`detected trunk branch from Graphite config: ${config.trunk}`);
+        return config.trunk;
+      }
+    } catch {
+      // No Graphite config or invalid — continue to fallbacks
+    }
+
+    // 2. Try git default remote branch
+    try {
+      const proc = await runCommand(
+        ctx,
+        ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'],
+        {},
+        5000,
+        false,
+      );
+      const ref = proc.stdout.trim();
+      // Output is like "origin/main" — strip the remote prefix
+      const branch = ref.startsWith('origin/') ? ref.slice('origin/'.length) : ref;
+      if (branch.length > 0) {
+        logger.info(`detected trunk branch from git default remote: ${branch}`);
+        return branch;
+      }
+    } catch {
+      // No default remote HEAD set — continue to fallbacks
+    }
+
+    // 3. Check for common trunk branch names
+    for (const candidate of ['main', 'master']) {
+      try {
+        await runCommand(
+          ctx,
+          ['rev-parse', '--verify', `refs/remotes/origin/${candidate}`],
+          {},
+          5000,
+          false,
+        );
+        logger.info(`detected trunk branch by convention: ${candidate}`);
+        return candidate;
+      } catch {
+        // This branch doesn't exist — try next
+      }
+    }
+
+    logger.info('could not detect trunk branch, falling back to --remotes');
+    return undefined;
   }
 
   /**
@@ -807,11 +878,17 @@ export class Repository {
       );
       const headHash = headProc.stdout.trim();
 
-      // Get public ancestor hashes (commits reachable from remote tracking branches)
+      // Get public ancestor hashes.
+      // If trunk branch is known, only commits reachable from origin/<trunk> are public.
+      // Otherwise fall back to all remote tracking branches.
       let publicAncestors: Set<string> | undefined;
       try {
+        const trunkBranch = this.info.trunkBranch;
+        const publicArgs = trunkBranch
+          ? ['log', '--format=%H', `origin/${trunkBranch}`, '--max-count=200']
+          : ['log', '--format=%H', '--remotes', '--max-count=200'];
         const publicProc = await this.runCommand(
-          ['log', '--format=%H', '--remotes', '--max-count=200'],
+          publicArgs,
           undefined,
           this.initialConnectionContext,
         );

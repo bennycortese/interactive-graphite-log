@@ -247,6 +247,12 @@ export type ValidatedRepoInfo = {
   codeReviewSystem: CodeReviewSystem;
   pullRequestDomain: string | undefined;
   preferredSubmitCommand?: PreferredSubmitCommand;
+  /**
+   * The trunk/main branch name (e.g. 'main', 'master').
+   * Detected from Graphite config, git default branch, or common conventions.
+   * Used for public/draft phase detection: commits reachable from origin/<trunkBranch> are public.
+   */
+  trunkBranch?: string;
 };
 
 export type ApplicationInfo = {
