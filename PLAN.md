@@ -404,7 +404,7 @@ For operations that have a `gt` equivalent, we should follow the same dual-mode 
 
 #### Phase 3: Improve code review integration
 
-16. **PR comment replies** — The `DiffComments` component can display comments fetched from GitHub but there's no reply UI. Add a comment input box that calls `addComment` or `addPullRequestReviewComment` GitHub GraphQL mutation. This enables code review workflow entirely within the UI.
+16. ~~**PR comment replies**~~ — Done. Added a comment input box at the bottom of the `DiffCommentsDetails` tooltip panel. Uses the GitHub GraphQL `addComment` mutation (via `gh api graphql`) with the PR's node ID as `subjectId`. The PR node ID is cached from the existing `PullRequestCommentsQuery` (updated to also fetch `id`). New `AddCommentMutation.graphql` in `isl-server/src/github/mutations/`. New `addComment()` method on `GitHubCodeReviewProvider` and `CodeReviewProvider` interface. New `addDiffComment`/`addedDiffComment` client-server message types. UI: `TextArea` + "Comment" button with loading state, Ctrl/Cmd+Enter shortcut, auto-refresh after posting.
 
 17. **Commit message ↔ PR description sync** — `enableMessageSyncing` is currently `false` in `GithubUICodeReviewProvider`. When enabled, amending a commit message could update the PR title/description via `updatePullRequest` mutation, and vice versa. Note: `gt submit` already syncs commit messages to PR descriptions — could just re-submit after amending.
 
